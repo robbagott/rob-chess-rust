@@ -7,8 +7,8 @@ pub enum Side {
 
 impl Side {
     // Return the opposite side to the one given.
-    pub fn opp_side(s: Side) -> Side {
-        match s {
+    pub fn opp_side(&self) -> Side {
+        match self {
             Side::White => Side::Black,
             Side::Black => Side::White,
         }

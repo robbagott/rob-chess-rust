@@ -4,7 +4,25 @@ pub struct ChessMove {
     o_rank: i32,
     n_file: i32,
     n_rank: i32,
-    promo_piece: String,
+    promo_piece: Option<String>,
+}
+
+impl ChessMove {
+    pub fn new(
+        o_file: i32,
+        o_rank: i32,
+        n_file: i32,
+        n_rank: i32,
+        promo_piece: Option<String>,
+    ) -> ChessMove {
+        ChessMove {
+            o_file,
+            o_rank,
+            n_file,
+            n_rank,
+            promo_piece,
+        }
+    }
 }
 
 impl PartialEq for ChessMove {
