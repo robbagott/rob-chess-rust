@@ -1,5 +1,8 @@
 use super::side::Side;
 
+use colored::*;
+use std::fmt;
+
 // Pawn, Rook, Knight, Bishop, Queen, and King are the values for a piece. None is provided for empty squares.
 #[derive(Copy, Clone)]
 pub enum Piece {
@@ -44,27 +47,22 @@ impl GamePiece {
     }
 }
 
-// func (p GamePiece) String() string {
-// 	var pieceStr string
-// 	switch p.piece {
-// 	case Pawn:
-// 		pieceStr = "P"
-// 	case Rook:
-// 		pieceStr = "R"
-// 	case Knight:
-// 		pieceStr = "N"
-// 	case Bishop:
-// 		pieceStr = "B"
-// 	case Queen:
-// 		pieceStr = "Q"
-// 	case King:
-// 		pieceStr = "K"
-// 	default:
-// 		pieceStr = " "
-// 	}
+impl fmt::Display for GamePiece {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut piece_str = "";
+        match self.piece {
+            Piece::Pawn => piece_str = "P",
+            Piece::Rook => piece_str = "R",
+            Piece::Knight => piece_str = "N",
+            Piece::Bishop => piece_str = "B",
+            Piece::Queen => piece_str = "Q",
+            Piece::King => piece_str = "K",
+            _ => piece_str = " ",
+        }
 
-// 	if p.color == White {
-// 		return color.GreenString(pieceStr)
-// 	}
-// 	return color.RedString(pieceStr)
-// }
+        if self.color == Side::White {
+            return write!(f, "{}", piece_str.green());
+        }
+        return write!(f, "{}", piece_str.red());
+    }
+}

@@ -1,5 +1,5 @@
 // White and Black are the values for a piece color.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum Side {
     White,
     Black,

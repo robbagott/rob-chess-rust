@@ -1,5 +1,6 @@
 use super::game_piece::{GamePiece, Piece};
 use super::side::Side;
+use std::fmt;
 
 // Square represents a square in a chess position. Squares can have a piece placed on them.
 pub struct Square {
@@ -58,5 +59,24 @@ impl Position {
                 }
             }
         }
+    }
+}
+
+impl fmt::Display for Position {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut board_print = String::new();
+        board_print += "   ––––––––––––––––-----------------\n";
+        for r in (0..self.board.len()).rev() {
+            board_print += &format!(" {} ", (r as i32 + 1));
+            for (f, _) in self.board[r].iter().enumerate() {
+                let game_piece = self.board[r][f];
+                board_print += &format!("| {} ", game_piece);
+                if f == 7 {
+                    board_print += "|\n   ––––––––––––––––-----------------\n";
+                }
+            }
+        }
+        board_print += "     a   b   c   d   e   f   g   h\n";
+        return write!(f, "{}", board_print);
     }
 }
