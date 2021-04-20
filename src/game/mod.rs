@@ -1,13 +1,26 @@
 mod game_piece;
 mod position;
+mod side;
 
-use crate::tree;
+use crate::tree::Node;
+use crate::tree::Tree;
+use position::Position;
 use regex::Regex;
 
 struct GameContext {
-    position: position::Position,
+    position: Position,
     chess_moves: Vec<ChessMove>,
-    game_tree: tree::Tree<tree::Node<ChessMove>>,
+    game_tree: Tree<Node<ChessMove>>,
+}
+
+impl GameContext {
+    fn new() -> GameContext {
+        GameContext {
+            position: Position::new(),
+            chess_moves: Vec::<ChessMove>::new(),
+            game_tree: Tree::<Node<ChessMove>>::new(),
+        }
+    }
 }
 
 // Move represents a move on the chess board. It encompasses a piece, the old square and the new square.
@@ -30,7 +43,7 @@ impl PartialEq for ChessMove {
 }
 
 pub fn start_user_session() {
-    let re = Regex::new("(?P<file1>[a-h])(?P<rank1>[1-8])(?P<file2>[a-h])(?P<rank2>[1-8])(?P<promotionPiece>[bnrq])?").unwrap();
+    let _re = Regex::new("(?P<file1>[a-h])(?P<rank1>[1-8])(?P<file2>[a-h])(?P<rank2>[1-8])(?P<promotionPiece>[bnrq])?").unwrap();
     println!(
         "Welcome to Rob Chess! When entering moves, please use long algebraic chess notation."
     );

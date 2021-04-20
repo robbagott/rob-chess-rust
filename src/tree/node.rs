@@ -1,10 +1,3 @@
-pub struct Tree<T>
-where
-    T: PartialEq,
-{
-    arena: Vec<Node<T>>,
-}
-
 pub struct Node<T>
 where
     T: PartialEq,
@@ -19,7 +12,7 @@ impl<T> Node<T>
 where
     T: PartialEq,
 {
-    fn new(id: usize, val: T) -> Self {
+    pub fn new(id: usize, val: T) -> Self {
         Self {
             id,
             val,

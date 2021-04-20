@@ -1,5 +1,8 @@
+use super::side::Side;
+
 // Pawn, Rook, Knight, Bishop, Queen, and King are the values for a piece. None is provided for empty squares.
-enum Piece {
+#[derive(Copy, Clone)]
+pub enum Piece {
     Pawn,
     Rook,
     Knight,
@@ -9,26 +12,36 @@ enum Piece {
     None,
 }
 
-// White and Black are the values for a piece color.
-pub enum Side {
-    White,
-    Black,
-}
-
-impl Side {
-    // Return the opposite side to the one given.
-    pub fn opp_side(s: Side) -> Side {
-        match s {
-            Side::White => Side::Black,
-            Side::Black => Side::White,
+impl Piece {
+    // Value returns the value of the piece. For now, the value is the classical chess piece value.
+    pub fn value(&self) -> i32 {
+        match self {
+            Piece::Pawn => 1,
+            Piece::Rook => 5,
+            Piece::Knight => 3,
+            Piece::Bishop => 3,
+            Piece::Queen => 9,
+            Piece::King => 200,
+            _ => 1,
         }
     }
 }
 
 // GamePiece represents a piece in a chess game. E.g. a black bishop.
+#[derive(Copy, Clone)]
 pub struct GamePiece {
     piece: Piece,
     color: Side,
+}
+
+impl GamePiece {
+    pub fn new(piece: Piece, color: Side) -> GamePiece {
+        GamePiece { piece, color }
+    }
+
+    pub fn value(&self) -> i32 {
+        self.piece.value()
+    }
 }
 
 // func (p GamePiece) String() string {
@@ -55,16 +68,3 @@ pub struct GamePiece {
 // 	}
 // 	return color.RedString(pieceStr)
 // }
-
-// Value returns the value of the piece. For now, the value is the classical chess piece value.
-fn value(p: GamePiece) -> i32 {
-    match p.piece {
-        Piece::Pawn => 1,
-        Piece::Rook => 5,
-        Piece::Knight => 3,
-        Piece::Bishop => 3,
-        Piece::Queen => 9,
-        Piece::King => 200,
-        _ => 1,
-    }
-}
