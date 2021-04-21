@@ -4,7 +4,7 @@ use colored::*;
 use std::fmt;
 
 // Pawn, Rook, Knight, Bishop, Queen, and King are the values for a piece. None is provided for empty squares.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Piece {
     Pawn,
     Rook,
@@ -31,7 +31,7 @@ impl Piece {
 }
 
 // GamePiece represents a piece in a chess game. E.g. a black bishop.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct GamePiece {
     piece: Piece,
     color: Side,

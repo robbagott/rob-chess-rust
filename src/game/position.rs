@@ -3,12 +3,14 @@ use super::side::Side;
 use std::fmt;
 
 // Square represents a square in a chess position. Squares can have a piece placed on them.
+#[derive(Debug)]
 pub struct Square {
     file: i32,
     rank: i32,
 }
 
 // Position represents a chess position representation.
+#[derive(Debug)]
 pub struct Position {
     board: [[GamePiece; 8]; 8],
     o_o_o_white: bool,
