@@ -1,12 +1,13 @@
 mod chess_move;
+mod color;
 mod game_context;
 mod game_piece;
 mod position;
-mod side;
+mod tree;
 
 use chess_move::ChessMove;
+use color::Color;
 use game_context::GameContext;
-use side::Side;
 use std::io;
 
 pub fn start_user_session() {
@@ -15,20 +16,20 @@ pub fn start_user_session() {
     );
 
     let mut game_ctx = GameContext::new();
-    let side = prompt_color();
+    let color = prompt_color();
 
     println!("{}", game_ctx.position);
 
-    game_loop(side, side, &mut game_ctx);
+    game_loop(color, color, &mut game_ctx);
 }
 
-fn prompt_color() -> Side {
+fn prompt_color() -> Color {
     println!("Choose a color ('w' or 'b' accepted)");
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
         Ok(_) => match input.trim() {
-            "w" => return Side::White,
-            "b" => return Side::Black,
+            "w" => return Color::White,
+            "b" => return Color::Black,
             _ => {
                 println!("Unrecognized input was: {}. Please try again.", input);
                 prompt_color()
@@ -66,24 +67,25 @@ fn read_move() -> Result<String, io::Error> {
     io::stdin().read_line(&mut input).map(|_| input)
 }
 
-fn game_loop(side: Side, player_side: Side, g: &mut GameContext) {
-    let opp_side = side.opp_side();
+fn game_loop(color: Color, player_color: Color, g: &mut GameContext) {
+    let opp_color = color.opp_color();
 
-    if side == player_side {
+    if color == player_color {
         let chess_move = get_move();
         println!("{}", chess_move);
         g.make_move(chess_move)
             .expect("Something went wrong processing the move\n");
         println!("{}", g.position);
-        game_loop(opp_side, player_side, g);
+        game_loop(opp_color, player_color, g);
     } else {
-        // println!("I think my moves are {}\n", g.position.get_moves(side));
-        // let engine_move = engine::think(g, side);
+        println!("I think my moves are {:?}\n", g.position.get_moves(color))
+
+        // let engine_move = engine::think(g, color);
         // println!("Engine Move: {}\n", engine_move);
         // g.make_move(engine_move);
         // println!("Moves so far: {}\n", g.moves);
         // println!("{}", g.position);
-        // println!("I think your moves are {}}\n", g.position.GetMoves(oppSide));
-        // game_loop(opp_side, player_side, g)
+        // println!("I think your moves are {}}\n", g.position.GetMoves(opp_color));
+        // game_loop(opp_color, player_color, g)
     }
 }

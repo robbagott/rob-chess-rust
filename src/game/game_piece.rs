@@ -1,4 +1,4 @@
-use super::side::Side;
+use super::color::Color;
 
 use colored::*;
 use std::fmt;
@@ -12,7 +12,6 @@ pub enum Piece {
     Bishop,
     Queen,
     King,
-    None,
 }
 
 impl Piece {
@@ -25,7 +24,6 @@ impl Piece {
             Piece::Bishop => 3,
             Piece::Queen => 9,
             Piece::King => 200,
-            _ => 1,
         }
     }
 }
@@ -39,7 +37,6 @@ impl fmt::Display for Piece {
             Piece::Bishop => "B",
             Piece::Queen => "Q",
             Piece::King => "K",
-            _ => " ",
         };
 
         write!(f, "{}", piece_str)
@@ -49,12 +46,12 @@ impl fmt::Display for Piece {
 // GamePiece represents a piece in a chess game. E.g. a black bishop.
 #[derive(Copy, Clone, Debug)]
 pub struct GamePiece {
-    piece: Piece,
-    color: Side,
+    pub piece: Piece,
+    pub color: Color,
 }
 
 impl GamePiece {
-    pub fn new(piece: Piece, color: Side) -> GamePiece {
+    pub fn new(piece: Piece, color: Color) -> GamePiece {
         GamePiece { piece, color }
     }
 
@@ -67,7 +64,7 @@ impl fmt::Display for GamePiece {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let piece_str = format!("{}", self.piece);
 
-        if self.color == Side::White {
+        if self.color == Color::White {
             return write!(f, "{}", piece_str.green());
         }
         write!(f, "{}", piece_str.red())

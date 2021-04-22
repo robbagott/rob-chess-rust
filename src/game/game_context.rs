@@ -1,11 +1,12 @@
 use super::chess_move::ChessMove;
 use super::position::Position;
+use super::tree::Tree;
 
 #[derive(Debug)]
 pub struct GameContext {
     pub position: Position,
     pub chess_moves: Vec<ChessMove>,
-    // pub game_tree: Tree<Node<ChessMove>>,
+    pub tree: Tree,
 }
 
 impl GameContext {
@@ -13,7 +14,7 @@ impl GameContext {
         GameContext {
             position: Position::new(),
             chess_moves: Vec::<ChessMove>::new(),
-            // game_tree: Tree::<Node<ChessMove>>::new(),
+            tree: Tree::new(),
         }
     }
 
