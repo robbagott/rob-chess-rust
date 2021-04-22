@@ -30,6 +30,22 @@ impl Piece {
     }
 }
 
+impl fmt::Display for Piece {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let piece_str = match self {
+            Piece::Pawn => "P",
+            Piece::Rook => "R",
+            Piece::Knight => "N",
+            Piece::Bishop => "B",
+            Piece::Queen => "Q",
+            Piece::King => "K",
+            _ => " ",
+        };
+
+        write!(f, "{}", piece_str)
+    }
+}
+
 // GamePiece represents a piece in a chess game. E.g. a black bishop.
 #[derive(Copy, Clone, Debug)]
 pub struct GamePiece {
@@ -49,20 +65,11 @@ impl GamePiece {
 
 impl fmt::Display for GamePiece {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut piece_str = "";
-        match self.piece {
-            Piece::Pawn => piece_str = "P",
-            Piece::Rook => piece_str = "R",
-            Piece::Knight => piece_str = "N",
-            Piece::Bishop => piece_str = "B",
-            Piece::Queen => piece_str = "Q",
-            Piece::King => piece_str = "K",
-            _ => piece_str = " ",
-        }
+        let piece_str = format!("{}", self.piece);
 
         if self.color == Side::White {
             return write!(f, "{}", piece_str.green());
         }
-        return write!(f, "{}", piece_str.red());
+        write!(f, "{}", piece_str.red())
     }
 }

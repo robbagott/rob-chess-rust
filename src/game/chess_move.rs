@@ -8,19 +8,19 @@ const ALGEBRAIC_REGEX: &str =
 // Move represents a move on the chess board. It encompasses a piece, the old square and the new square.
 #[derive(Debug)]
 pub struct ChessMove {
-    o_file: u32,
-    o_rank: u32,
-    n_file: u32,
-    n_rank: u32,
-    promo_piece: Option<String>,
+    pub o_file: usize,
+    pub o_rank: usize,
+    pub n_file: usize,
+    pub n_rank: usize,
+    pub promo_piece: Option<String>,
 }
 
 impl ChessMove {
     pub fn new(
-        o_file: u32,
-        o_rank: u32,
-        n_file: u32,
-        n_rank: u32,
+        o_file: usize,
+        o_rank: usize,
+        n_file: usize,
+        n_rank: usize,
         promo_piece: Option<String>,
     ) -> ChessMove {
         ChessMove {
@@ -42,9 +42,9 @@ impl ChessMove {
         let promo_piece = caps.get(5).map(|x| String::from(x.as_str())); // Optional promotion component
         return Some(ChessMove::new(
             file1,
-            rank1 as u32,
+            rank1 as usize,
             file2,
-            rank2 as u32,
+            rank2 as usize,
             promo_piece,
         ));
     }
@@ -71,12 +71,12 @@ impl Display for ChessMove {
     }
 }
 
-fn parse_file(file: &str) -> Option<u32> {
+fn parse_file(file: &str) -> Option<usize> {
     let num_char = file.chars().next()?.to_lowercase().next()?;
-    let digit = (num_char as u32) - ('a' as u32);
+    let digit = (num_char as usize) - ('a' as usize);
     Some(digit)
 }
 
-fn parse_rank(rank: &str) -> Option<u32> {
-    rank.parse::<u32>().ok().map(|n| n - 1)
+fn parse_rank(rank: &str) -> Option<usize> {
+    rank.parse::<usize>().ok().map(|n| n - 1)
 }

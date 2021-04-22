@@ -1,3 +1,4 @@
+use super::chess_move::ChessMove;
 use super::game_piece::{GamePiece, Piece};
 use super::side::Side;
 use std::fmt;
@@ -62,6 +63,42 @@ impl Position {
             }
         }
     }
+
+    pub fn make_move(&mut self, chess_move: ChessMove) -> Result<(), ()> {
+        let or = chess_move.o_rank;
+        let of = chess_move.o_file;
+        let nr = chess_move.n_rank;
+        let nf = chess_move.n_file;
+
+        if of > 7 || or > 7 || nf > 7 || nr > 7 {
+            Err(())
+        } else {
+            // TODO handle promotion
+            // Make normal move
+            let piece = self.board[or][of];
+            self.board[or][of] = GamePiece::new(Piece::None, Side::White);
+            self.board[nr][nf] = piece;
+            Ok(())
+        }
+    }
+
+    // // MakeMove modifies the given position to represent the position after the move is made.
+    // func (p *Position) MakeMove(move Move) bool {
+    //     of, or := move.oFile, move.oRank
+    //     nf, nr := move.nFile, move.nRank
+    //     if of > 7 || of < 0 || or > 7 || or < 0 ||
+    //         nf > 7 || nf < 0 || nr > 7 || nr < 0 {
+    //         return false
+    //     }
+
+    //     // TODO handle promotion
+
+    //     // Make normal move
+    //     piece := p.board[or][of]
+    //     p.board[or][of] = GamePiece{None, White}
+    //     p.board[nr][nf] = piece
+    //     return true
+    // }
 }
 
 impl fmt::Display for Position {

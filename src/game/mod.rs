@@ -1,41 +1,25 @@
 mod chess_move;
+mod game_context;
 mod game_piece;
 mod position;
 mod side;
 
 use chess_move::ChessMove;
-use position::Position;
+use game_context::GameContext;
 use side::Side;
 use std::io;
-
-#[derive(Debug)]
-struct GameContext {
-    pub position: Position,
-    pub chess_moves: Vec<ChessMove>,
-    // pub game_tree: Tree<Node<ChessMove>>,
-}
-
-impl GameContext {
-    fn new() -> GameContext {
-        GameContext {
-            position: Position::new(),
-            chess_moves: Vec::<ChessMove>::new(),
-            // game_tree: Tree::<Node<ChessMove>>::new(),
-        }
-    }
-}
 
 pub fn start_user_session() {
     println!(
         "Welcome to Rob Chess! When entering moves, please use long algebraic chess notation."
     );
 
-    let game_ctx = GameContext::new();
+    let mut game_ctx = GameContext::new();
     let side = prompt_color();
 
     println!("{}", game_ctx.position);
 
-    game_loop(side, side, game_ctx);
+    game_loop(side, side, &mut game_ctx);
 }
 
 fn prompt_color() -> Side {
@@ -82,13 +66,14 @@ fn read_move() -> Result<String, io::Error> {
     io::stdin().read_line(&mut input).map(|_| input)
 }
 
-fn game_loop(side: Side, player_side: Side, g: GameContext) {
+fn game_loop(side: Side, player_side: Side, g: &mut GameContext) {
     let opp_side = side.opp_side();
 
     if side == player_side {
         let chess_move = get_move();
         println!("{}", chess_move);
-        //g.make_move(chess_move).expect(format!("Something went wrong processing move: {}\n", chess_move));
+        g.make_move(chess_move)
+            .expect("Something went wrong processing the move\n");
         println!("{}", g.position);
         game_loop(opp_side, player_side, g);
     } else {
