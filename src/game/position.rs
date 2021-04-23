@@ -90,36 +90,36 @@ impl Position {
     }
 
     // TODO combine check pruning with get_moves_at for mem/cpu efficiency boost.
-    pub fn get_moves(&self, color: Color) -> Vec<ChessMove> {
-        let moves = Vec::<ChessMove>::with_capacity(20);
+    // pub fn get_moves(&self, color: Color) -> Vec<ChessMove> {
+    //     let moves = Vec::<ChessMove>::with_capacity(20);
 
-        /* Only pieces can make moves in chess, so we iterate through the board and check for pieces.
-        If a piece is found, we then check for legal moves for that piece. */
-        for r in 0..self.board.len() {
-            for f in 0..self.board[r].len() {
-                if let Some(p) = self.board[r][f] {
-                    if p.color == color {
-                        moves.append(&mut self.get_moves_at(f, r, color));
-                    }
-                }
-            }
-        }
+    //     /* Only pieces can make moves in chess, so we iterate through the board and check for pieces.
+    //     If a piece is found, we then check for legal moves for that piece. */
+    //     for r in 0..self.board.len() {
+    //         for f in 0..self.board[r].len() {
+    //             if let Some(p) = self.board[r][f] {
+    //                 if p.color == color {
+    //                     moves.append(&mut self.get_moves_at(f, r, color));
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        // Prune moves which lead to checks
-        let valid_moves = Vec::<ChessMove>::with_capacity(20);
-        for m in moves.iter() {
-            if self.causes_check(m, color) {
-                valid_moves.push(m);
-            }
-        }
+    //     // Prune moves which lead to checks
+    //     let valid_moves = Vec::<ChessMove>::with_capacity(20);
+    //     for m in moves.iter() {
+    //         if self.causes_check(m, color) {
+    //             valid_moves.push(m);
+    //         }
+    //     }
 
-        valid_moves
-    }
+    //     valid_moves
+    // }
 
-    fn get_moves_at(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
-        let moves = Vec::<ChessMove>::with_capacity(20);
-        let piece = self.board[r][f];
-    }
+    // fn get_moves_at(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
+    //     let moves = Vec::<ChessMove>::with_capacity(20);
+    //     let piece = self.board[r][f];
+    // }
 }
 
 impl fmt::Display for Position {
@@ -129,9 +129,17 @@ impl fmt::Display for Position {
         for r in (0..self.board.len()).rev() {
             board_print += &format!(" {} ", (r as i32 + 1));
             for f in 0..self.board[r].len() {
-                let game_piece = self.board[r][f];
-                board_print += &format!("| {} ", game_piece.or_else(|| " "));
-                if f == 7
+                // let p_str = " ";
+                // if let Some(p) = self.board[r][f] {
+                //     p_str = format!("{}", p);
+                // }
+
+                let p_str = self.board[r][f]
+                    .map(|p| format!("{}", p))
+                    .unwrap_or(" ".to_string());
+
+                board_print += &format!("| {} ", p_str);
+                if f == 7 {
                     board_print += "|\n   ––––––––––––––––-----------------\n";
                 }
             }
