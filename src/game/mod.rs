@@ -1,5 +1,6 @@
 mod chess_move;
 mod color;
+mod engine;
 mod game_context;
 mod game_piece;
 mod position;
@@ -80,7 +81,7 @@ fn game_loop(color: Color, player_color: Color, g: &mut GameContext) {
     } else {
         // println!("I think my moves are {:?}\n", g.position.get_moves(color))
 
-        // let engine_move = engine::think(g, color);
+        let engine_move = engine::think(g, color);
         // println!("Engine Move: {}\n", engine_move);
         // g.make_move(engine_move);
         // println!("Moves so far: {}\n", g.moves);
