@@ -198,8 +198,26 @@ impl Position {
 
     // TODO
     fn get_knight_moves(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
-        vec![]
+        let mut moves = Vec::<ChessMove>::with_capacity(8);
+        let squares = self.look_l(f, r);
+        for s in squares {
+            if self.can_move_to_square(f, r, color) {
+                moves.push(ChessMove::new(f, r, s.file, s.rank, None));
+            }
+        }
+        moves
     }
+
+    //func (p *Position) getKnightMoves(f, r int, side Side) []Move {
+    //    moves := make([]Move, 0, 8)
+    //    squares := p.lookL(f, r)
+    //    for _, square := range squares {
+    //        if canMove, _ := canMoveToSquare(*p, square.file, square.rank, side); canMove {
+    //            moves = append(moves, Move{f, r, square.file, square.rank, ""})
+    //        }
+    //    }
+    //    return moves
+    //}
     // TODO
     fn get_bishop_moves(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
         vec![]
@@ -362,6 +380,68 @@ impl Position {
     //    return squares
     //}
 
+    // TODO
+    fn look_l(&self, f: usize, r: usize) -> Vec<Square> {
+        let mut squares = Vec::<Square>::new();
+
+        // Right L moves
+        if f + 2 < 8 && r + 1 < 8 {
+            squares.push(Square {
+                file: f + 2,
+                rank: r + 1,
+            });
+        }
+        if f + 2 < 8 && r as i32 - 1 >= 0 {
+            squares.push(Square {
+                file: f + 2,
+                rank: r - 1,
+            });
+        }
+
+        // Left L moves
+        if f as i32 - 2 >= 0 && r + 1 < 8 {
+            squares.push(Square {
+                file: f - 2,
+                rank: r + 1,
+            });
+        }
+        if f as i32 - 2 < 8 && r as i32 - 1 >= 0 {
+            squares.push(Square {
+                file: f - 2,
+                rank: r - 1,
+            });
+        }
+
+        // Forward L moves
+        if f + 1 < 8 && r + 2 < 8 {
+            squares.push(Square {
+                file: f + 1,
+                rank: r + 2,
+            });
+        }
+        if f as i32 - 1 >= 0 && r + 2 < 8 {
+            squares.push(Square {
+                file: f - 1,
+                rank: r + 2,
+            });
+        }
+
+        // Backward L moves
+        if f + 1 < 8 && r as i32 - 2 >= 0 {
+            squares.push(Square {
+                file: f + 1,
+                rank: r - 2,
+            });
+        }
+        if f as i32 - 1 >= 0 && r as i32 - 2 >= 0 {
+            squares.push(Square {
+                file: f - 1,
+                rank: r - 2,
+            });
+        }
+        squares
+    }
+
     fn add_look_result(
         moves: &mut Vec<ChessMove>,
         color: Color,
@@ -376,6 +456,11 @@ impl Position {
             }
             moves.push(ChessMove::new(f, r, s.file, s.rank, None));
         }
+    }
+
+    // TODO
+    fn can_move_to_square(&self, f: usize, r: usize, color: Color) -> bool {
+        true
     }
 }
 
