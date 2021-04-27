@@ -10,6 +10,12 @@ pub struct Square {
     pub rank: usize,
 }
 
+impl Square {
+    pub fn new(f: usize, r: usize) -> Square {
+        Square { file: f, rank: r }
+    }
+}
+
 // Position represents a chess position representation.
 #[derive(Debug)]
 pub struct Position {
@@ -186,7 +192,6 @@ impl Position {
         moves
     }
 
-    // TODO
     fn get_rook_moves(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
         let mut moves = Vec::<ChessMove>::with_capacity(20);
         Self::add_look_result(&mut moves, color, f, r, self.look_right(f, r));
@@ -196,7 +201,6 @@ impl Position {
         moves
     }
 
-    // TODO
     fn get_knight_moves(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
         let mut moves = Vec::<ChessMove>::with_capacity(8);
         let squares = self.look_l(f, r);
@@ -208,27 +212,104 @@ impl Position {
         moves
     }
 
-    //func (p *Position) getKnightMoves(f, r int, side Side) []Move {
-    //    moves := make([]Move, 0, 8)
-    //    squares := p.lookL(f, r)
-    //    for _, square := range squares {
-    //        if canMove, _ := canMoveToSquare(*p, square.file, square.rank, side); canMove {
-    //            moves = append(moves, Move{f, r, square.file, square.rank, ""})
-    //        }
-    //    }
-    //    return moves
-    //}
-    // TODO
     fn get_bishop_moves(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
-        vec![]
+        let mut moves = Vec::<ChessMove>::with_capacity(20);
+
+        Self::add_look_result(&mut moves, color, f, r, self.look_up_right(f, r));
+        Self::add_look_result(&mut moves, color, f, r, self.look_up_left(f, r));
+        Self::add_look_result(&mut moves, color, f, r, self.look_down_right(f, r));
+        Self::add_look_result(&mut moves, color, f, r, self.look_down_left(f, r));
+        moves
     }
-    // TODO
+
     fn get_queen_moves(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
-        vec![]
+        let mut moves = self.get_rook_moves(f, r, color);
+        moves.extend(self.get_bishop_moves(f, r, color));
+        moves
     }
-    // TODO
+
+    //func (p *Position) getKingMoves(f, r int, side Side) []Move {
+    //	// Look at adjacent squares
+    //	moves := make([]Move, 0, 8)
+    //	// Right
+    //	if canMove, _ := canMoveToSquare(*p, f+1, r, side); canMove {
+    //		moves = append(moves, Move{f, r, f + 1, r, ""})
+    //	}
+    //	// Back-right
+    //	if canMove, _ := canMoveToSquare(*p, f+1, r-1, side); canMove {
+    //		moves = append(moves, Move{f, r, f + 1, r - 1, ""})
+    //	}
+    //	// Back
+    //	if canMove, _ := canMoveToSquare(*p, f, r-1, side); canMove {
+    //		moves = append(moves, Move{f, r, f, r - 1, ""})
+    //	}
+    //	// Back-left
+    //	if canMove, _ := canMoveToSquare(*p, f-1, r-1, side); canMove {
+    //		moves = append(moves, Move{f, r, f - 1, r - 1, ""})
+    //	}
+    //	// Left
+    //	if canMove, _ := canMoveToSquare(*p, f-1, r, side); canMove {
+    //		moves = append(moves, Move{f, r, f - 1, r, ""})
+    //	}
+    //	// Forward-left
+    //	if canMove, _ := canMoveToSquare(*p, f-1, r+1, side); canMove {
+    //		moves = append(moves, Move{f, r, f - 1, r + 1, ""})
+    //	}
+    //	// Forward
+    //	if canMove, _ := canMoveToSquare(*p, f, r+1, side); canMove {
+    //		moves = append(moves, Move{f, r, f, r + 1, ""})
+    //	}
+    //	// Forward-right
+    //	if canMove, _ := canMoveToSquare(*p, f+1, r+1, side); canMove {
+    //		moves = append(moves, Move{f, r, f + 1, r + 1, ""})
+    //	}
+    //
+    //	// TODO Castle
+    //
+    //	return moves
+    //}
+
     fn get_king_moves(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
-        vec![]
+        let mut moves = Vec::<ChessMove>::with_capacity(8);
+
+        let fi = f as isize;
+        let ri = r as isize;
+
+        // Right
+        if self.can_move_to_square(fi + 1, ri, color) {
+            moves.push(ChessMove::new(f, r, f + 1, r, None));
+        }
+        // Down right
+        if self.can_move_to_square(fi + 1, ri - 1, color) {
+            moves.push(ChessMove::new(f, r, f + 1, r - 1, None));
+        }
+        // Down
+        if self.can_move_to_square(fi, ri - 1, color) {
+            moves.push(ChessMove::new(f, r, f, r - 1, None));
+        }
+        // Down left
+        if self.can_move_to_square(fi - 1, ri - 1, color) {
+            moves.push(ChessMove::new(f, r, f - 1, r - 1, None));
+        }
+        // Left
+        if self.can_move_to_square(fi - 1, ri, color) {
+            moves.push(ChessMove::new(f, r, f - 1, r, None));
+        }
+        // Up left
+        if self.can_move_to_square(fi - 1, ri + 1, color) {
+            moves.push(ChessMove::new(f, r, f - 1, r + 1, None));
+        }
+        // Up
+        if self.can_move_to_square(fi, ri + 1, color) {
+            moves.push(ChessMove::new(f, r, f, r + 1, None));
+        }
+        // Up right
+        if self.can_move_to_square(fi + 1, ri + 1, color) {
+            moves.push(ChessMove::new(f, r, f + 1, r + 1, None));
+        }
+
+        // TODO Castle
+        moves
     }
 
     // TODO
@@ -243,8 +324,8 @@ impl Position {
         let mut squares = Vec::<Square>::new();
         let mut piece = None;
         for i in (r + 1)..8 {
-            squares.push(Square { file: f, rank: i });
-            if let None = self.board[i as usize][f] {
+            squares.push(Square::new(f, i));
+            if self.board[i as usize][f].is_some() {
                 piece = self.board[i as usize][f];
                 break;
             }
@@ -252,25 +333,27 @@ impl Position {
         (squares, piece)
     }
 
-    //func (p *Position) lookUpRight(f, r int) ([]Square, *GamePiece) {
-    //    squares := make([]Square, 0)
-    //    piece := GamePiece{None, White}
-    //    for i, j := r+1, f+1; i < 8 && j < 8; i, j = i+1, j+1 {
-    //        squares = append(squares, Square{j, i})
-    //        if p.board[i][j].piece != None {
-    //            piece = p.board[i][j]
-    //            break
-    //        }
-    //    }
-    //    return squares, &piece
-    //}
+    fn look_up_right(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
+        let mut squares = Vec::<Square>::with_capacity(20);
+        let mut piece = None;
+        for i in (r + 1)..8 {
+            for j in (f + 1)..8 {
+                squares.push(Square::new(j, i));
+                if self.board[i][j].is_some() {
+                    piece = self.board[i][j];
+                    break;
+                }
+            }
+        }
+        (squares, piece)
+    }
 
     fn look_right(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::new();
         let mut piece = None;
         for i in (f + 1)..8 {
-            squares.push(Square { file: i, rank: r });
-            if let None = self.board[r][i as usize] {
+            squares.push(Square::new(i, r));
+            if self.board[r][i as usize].is_some() {
                 piece = self.board[r][i as usize];
                 break;
             }
@@ -278,24 +361,26 @@ impl Position {
         (squares, piece)
     }
 
-    //func (p *Position) lookDownRight(f, r int) ([]Square, *GamePiece) {
-    //    squares := make([]Square, 0)
-    //    piece := GamePiece{None, White}
-    //    for i, j := r-1, f+1; i >= 0 && j < 8; i, j = i-1, j+1 {
-    //        squares = append(squares, Square{j, i})
-    //        if p.board[i][j].piece != None {
-    //            piece = p.board[i][j]
-    //            break
-    //        }
-    //    }
-    //    return squares, &piece
-    //}
+    fn look_down_right(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
+        let mut squares = Vec::<Square>::with_capacity(20);
+        let mut piece = None;
+        for i in (r - 1)..=0 {
+            for j in (f + 1)..8 {
+                squares.push(Square::new(j, i));
+                if self.board[i][j].is_some() {
+                    piece = self.board[i][j];
+                    break;
+                }
+            }
+        }
+        (squares, piece)
+    }
 
     fn look_down(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::new();
         let mut piece = None;
         for i in (r - 1)..=0 {
-            squares.push(Square { file: f, rank: i });
+            squares.push(Square::new(f, i));
             if let None = self.board[i as usize][f] {
                 piece = self.board[i as usize][f];
                 break;
@@ -303,24 +388,27 @@ impl Position {
         }
         (squares, piece)
     }
-    //func (p *Position) lookDownLeft(f, r int) ([]Square, *GamePiece) {
-    //    squares := make([]Square, 0)
-    //    piece := GamePiece{None, White}
-    //    for i, j := r-1, f-1; i >= 0 && j >= 0; i, j = i-1, j-1 {
-    //        squares = append(squares, Square{j, i})
-    //        if p.board[i][j].piece != None {
-    //            piece = p.board[i][j]
-    //            break
-    //        }
-    //    }
-    //    return squares, &piece
-    //}
+
+    fn look_down_left(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
+        let mut squares = Vec::<Square>::with_capacity(20);
+        let mut piece = None;
+        for i in (r - 1)..=0 {
+            for j in (f - 1)..=0 {
+                squares.push(Square::new(j, i));
+                if self.board[i][j].is_some() {
+                    piece = self.board[i][j];
+                    break;
+                }
+            }
+        }
+        (squares, piece)
+    }
 
     fn look_left(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::new();
         let mut piece = None;
         for i in (f - 1)..=0 {
-            squares.push(Square { file: i, rank: r });
+            squares.push(Square::new(i, r));
             if let None = self.board[r][i as usize] {
                 piece = self.board[r][i as usize];
                 break;
@@ -329,115 +417,54 @@ impl Position {
         (squares, piece)
     }
 
-    //func (p *Position) lookUpLeft(f, r int) ([]Square, *GamePiece) {
-    //    squares := make([]Square, 0)
-    //    piece := GamePiece{None, White}
-    //    for i, j := r+1, f-1; i < 8 && j >= 0; i, j = i+1, j-1 {
-    //        squares = append(squares, Square{j, i})
-    //        if p.board[i][j].piece != None {
-    //            piece = p.board[i][j]
-    //            break
-    //        }
-    //    }
-    //    return squares, &piece
-    //}
+    fn look_up_left(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
+        let mut squares = Vec::<Square>::with_capacity(20);
+        let mut piece = None;
+        for i in (r + 1)..8 {
+            for j in (f - 1)..=0 {
+                squares.push(Square::new(j, i));
+                if self.board[i][j].is_some() {
+                    piece = self.board[i][j];
+                    break;
+                }
+            }
+        }
+        (squares, piece)
+    }
 
-    //func (p *Position) lookL(f, r int) []Square {
-    //    squares := make([]Square, 0)
-
-    //    // Right L moves
-    //    if f+2 < 8 && r+1 < 8 {
-    //        squares = append(squares, Square{f + 2, r + 1})
-    //    }
-    //    if f+2 < 8 && r-1 >= 0 {
-    //        squares = append(squares, Square{f + 2, r - 1})
-    //    }
-
-    //    // Left L moves
-    //    if f-2 >= 0 && r+1 < 8 {
-    //        squares = append(squares, Square{f - 2, r + 1})
-    //    }
-    //    if f-2 >= 0 && r-1 >= 0 {
-    //        squares = append(squares, Square{f - 2, r - 1})
-    //    }
-
-    //    // Forward L moves
-    //    if f+1 < 8 && r+2 < 8 {
-    //        squares = append(squares, Square{f + 1, r + 2})
-    //    }
-    //    if f-1 >= 0 && r+2 < 8 {
-    //        squares = append(squares, Square{f - 1, r + 2})
-    //    }
-
-    //    // Backward L moves
-    //    if f+1 < 8 && r-2 >= 0 {
-    //        squares = append(squares, Square{f + 1, r - 2})
-    //    }
-    //    if f-1 >= 0 && r-2 >= 0 {
-    //        squares = append(squares, Square{f - 1, r - 2})
-    //    }
-
-    //    return squares
-    //}
-
-    // TODO
     fn look_l(&self, f: usize, r: usize) -> Vec<Square> {
         let mut squares = Vec::<Square>::new();
 
         // Right L moves
         if f + 2 < 8 && r + 1 < 8 {
-            squares.push(Square {
-                file: f + 2,
-                rank: r + 1,
-            });
+            squares.push(Square::new(f + 2, r + 1));
         }
         if f + 2 < 8 && r as i32 - 1 >= 0 {
-            squares.push(Square {
-                file: f + 2,
-                rank: r - 1,
-            });
+            squares.push(Square::new(f + 2, r - 1));
         }
 
         // Left L moves
         if f as i32 - 2 >= 0 && r + 1 < 8 {
-            squares.push(Square {
-                file: f - 2,
-                rank: r + 1,
-            });
+            squares.push(Square::new(f - 2, r + 1));
         }
         if f as i32 - 2 < 8 && r as i32 - 1 >= 0 {
-            squares.push(Square {
-                file: f - 2,
-                rank: r - 1,
-            });
+            squares.push(Square::new(f - 2, r - 1));
         }
 
         // Forward L moves
         if f + 1 < 8 && r + 2 < 8 {
-            squares.push(Square {
-                file: f + 1,
-                rank: r + 2,
-            });
+            squares.push(Square::new(f + 1, r + 2));
         }
         if f as i32 - 1 >= 0 && r + 2 < 8 {
-            squares.push(Square {
-                file: f - 1,
-                rank: r + 2,
-            });
+            squares.push(Square::new(f - 1, r + 2));
         }
 
         // Backward L moves
         if f + 1 < 8 && r as i32 - 2 >= 0 {
-            squares.push(Square {
-                file: f + 1,
-                rank: r - 2,
-            });
+            squares.push(Square::new(f + 1, r - 2));
         }
         if f as i32 - 1 >= 0 && r as i32 - 2 >= 0 {
-            squares.push(Square {
-                file: f - 1,
-                rank: r - 2,
-            });
+            squares.push(Square::new(f - 1, r - 2));
         }
         squares
     }
@@ -458,9 +485,22 @@ impl Position {
         }
     }
 
-    // TODO
-    fn can_move_to_square(&self, f: usize, r: usize, color: Color) -> bool {
-        true
+    // Returns if a piece can move to a specific square .
+    fn can_move_to_square(&self, f: isize, r: isize, color: Color) -> bool {
+        if f < 0 || f > 7 || r < 0 || r > 7 {
+            return false;
+        }
+
+        match self.board[r as usize][f as usize] {
+            Some(p) => {
+                if p.color == color {
+                    false
+                } else {
+                    true
+                }
+            }
+            None => true,
+        }
     }
 }
 
@@ -471,11 +511,6 @@ impl fmt::Display for Position {
         for r in (0..self.board.len()).rev() {
             board_print += &format!(" {} ", (r as i32 + 1));
             for f in 0..self.board[r].len() {
-                // let p_str = " ";
-                // if let Some(p) = self.board[r][f] {
-                //     p_str = format!("{}", p);
-                // }
-
                 let p_str = self.board[r][f]
                     .map(|p| format!("{}", p))
                     .unwrap_or(" ".to_string());
