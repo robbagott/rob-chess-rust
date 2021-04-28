@@ -20,7 +20,7 @@ impl GameContext {
 
     // MakeMove makes a move in the game and records it.
     pub fn make_move(&mut self, chess_move: ChessMove) -> Result<(), ()> {
-        self.position.make_move(chess_move)
+        self.position.make_move(&chess_move)
 
         // if ok := g.position.MakeMove(move); ok {
         //     // Add move

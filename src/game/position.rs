@@ -77,7 +77,7 @@ impl Position {
         }
     }
 
-    pub fn make_move(&mut self, chess_move: ChessMove) -> Result<(), ()> {
+    pub fn make_move(&mut self, chess_move: &ChessMove) -> Result<(), ()> {
         let or = chess_move.o_rank;
         let of = chess_move.o_file;
         let nr = chess_move.n_rank;
@@ -205,7 +205,7 @@ impl Position {
         let mut moves = Vec::<ChessMove>::with_capacity(8);
         let squares = self.look_l(f, r);
         for s in squares {
-            if self.can_move_to_square(f, r, color) {
+            if self.can_move_to_square(f as isize, r as isize, color) {
                 moves.push(ChessMove::new(f, r, s.file, s.rank, None));
             }
         }
@@ -227,47 +227,6 @@ impl Position {
         moves.extend(self.get_bishop_moves(f, r, color));
         moves
     }
-
-    //func (p *Position) getKingMoves(f, r int, side Side) []Move {
-    //	// Look at adjacent squares
-    //	moves := make([]Move, 0, 8)
-    //	// Right
-    //	if canMove, _ := canMoveToSquare(*p, f+1, r, side); canMove {
-    //		moves = append(moves, Move{f, r, f + 1, r, ""})
-    //	}
-    //	// Back-right
-    //	if canMove, _ := canMoveToSquare(*p, f+1, r-1, side); canMove {
-    //		moves = append(moves, Move{f, r, f + 1, r - 1, ""})
-    //	}
-    //	// Back
-    //	if canMove, _ := canMoveToSquare(*p, f, r-1, side); canMove {
-    //		moves = append(moves, Move{f, r, f, r - 1, ""})
-    //	}
-    //	// Back-left
-    //	if canMove, _ := canMoveToSquare(*p, f-1, r-1, side); canMove {
-    //		moves = append(moves, Move{f, r, f - 1, r - 1, ""})
-    //	}
-    //	// Left
-    //	if canMove, _ := canMoveToSquare(*p, f-1, r, side); canMove {
-    //		moves = append(moves, Move{f, r, f - 1, r, ""})
-    //	}
-    //	// Forward-left
-    //	if canMove, _ := canMoveToSquare(*p, f-1, r+1, side); canMove {
-    //		moves = append(moves, Move{f, r, f - 1, r + 1, ""})
-    //	}
-    //	// Forward
-    //	if canMove, _ := canMoveToSquare(*p, f, r+1, side); canMove {
-    //		moves = append(moves, Move{f, r, f, r + 1, ""})
-    //	}
-    //	// Forward-right
-    //	if canMove, _ := canMoveToSquare(*p, f+1, r+1, side); canMove {
-    //		moves = append(moves, Move{f, r, f + 1, r + 1, ""})
-    //	}
-    //
-    //	// TODO Castle
-    //
-    //	return moves
-    //}
 
     fn get_king_moves(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
         let mut moves = Vec::<ChessMove>::with_capacity(8);
@@ -312,9 +271,65 @@ impl Position {
         moves
     }
 
-    // TODO
-    fn causes_check(&self, m: &ChessMove, color: Color) -> bool {
-        false
+    // TODO self should probably not be mutable in this function. Fix later.
+    fn causes_check(&mut self, m: &ChessMove, color: Color) -> bool {
+        let old_piece = self.board[m.o_rank][m.o_file];
+        let captured_piece = self.board[m.n_rank][m.n_file];
+        let mut to_return = false;
+
+        self.make_move(&m);
+        let king_square = self.get_king_square(color);
+        if self.in_check(king_square.file, king_square.rank, color) {
+            to_return = true;
+        }
+
+        // Roll back the move.
+        self.board[m.o_rank][m.o_file] = old_piece;
+        self.board[m.n_rank][m.n_file] = captured_piece;
+        to_return
+    }
+
+    fn get_king_square(&self, color: Color) -> Square {
+        for r in 0..self.board.len() {
+            for f in 0..self.board[r].len() {
+                if let Some(p) = self.board[r][f] {
+                    if p.color == color {
+                        return Square::new(f, r);
+                    }
+                }
+            }
+        }
+        panic!(format!("No king found in position: \n {}", self));
+    }
+
+    // Expand to king and pawns.
+    fn in_check(&self, f: usize, r: usize, color: Color) -> bool {
+        let check_straight = |func: fn(usize, usize) -> (Vec<Square>, Option<GamePiece>)| {
+            if let (_, Some(p)) = func(f, r) {
+                match p.piece {
+                    Piece::Rook | Piece::Queen if p.color == color => return true,
+                    _ => return false,
+                }
+            }
+            false
+        };
+        let check_diagonal = |func: fn(usize, usize) -> (Vec<Square>, Option<GamePiece>)| {
+            if let (_, Some(p)) = func(f, r) {
+                match p.piece {
+                    Piece::Bishop | Piece::Queen if p.color == color => return true,
+                    _ => return false,
+                }
+            }
+            false
+        };
+        check_straight(self.look_up)
+            || check_straight(self.look_right)
+            || check_straight(self.look_down)
+            || check_straight(self.look_left)
+            || check_diagonal(self.look_up_right)
+            || check_diagonal(self.look_down_right)
+            || check_diagonal(self.look_down_left)
+            || check_diagonal(self.look_up_right)
     }
 
     /* lookUp and other look functions look in a direction on the board from a starting square.
