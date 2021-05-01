@@ -2,6 +2,8 @@ use super::chess_move::ChessMove;
 use super::color::Color;
 use super::game_piece::{GamePiece, Piece};
 use std::fmt;
+use std::iter::Rev;
+use std::ops::Range;
 
 // Square represents a square in a chess position. Squares can have a piece placed on them.
 #[derive(Debug)]
@@ -16,10 +18,12 @@ impl Square {
     }
 }
 
+type Board = [[Option<GamePiece>; 8]; 8];
+
 // Position represents a chess position representation.
 #[derive(Debug)]
 pub struct Position {
-    pub board: [[Option<GamePiece>; 8]; 8],
+    pub board: Board,
     pub o_o_o_white: bool,
     pub o_o_white: bool,
     pub o_o_o_black: bool,
@@ -96,7 +100,8 @@ impl Position {
     }
 
     // TODO combine check pruning with get_moves_at for mem/cpu efficiency boost.
-    pub fn get_moves(&self, color: Color) -> Vec<ChessMove> {
+    // TODO fix self mutability.
+    pub fn get_moves(&mut self, color: Color) -> Vec<ChessMove> {
         let mut moves = Vec::<ChessMove>::with_capacity(20);
 
         /* Only pieces can make moves in chess, so we iterate through the board and check for pieces.
@@ -302,10 +307,10 @@ impl Position {
         panic!(format!("No king found in position: \n {}", self));
     }
 
-    // Expand to king and pawns.
+    // TODO Expand to king and pawns.
     fn in_check(&self, f: usize, r: usize, color: Color) -> bool {
-        let check_straight = |func: fn(usize, usize) -> (Vec<Square>, Option<GamePiece>)| {
-            if let (_, Some(p)) = func(f, r) {
+        let check_straight = |func: fn(&Self, usize, usize) -> (Vec<Square>, Option<GamePiece>)| {
+            if let (_, Some(p)) = func(self, f, r) {
                 match p.piece {
                     Piece::Rook | Piece::Queen if p.color == color => return true,
                     _ => return false,
@@ -313,8 +318,8 @@ impl Position {
             }
             false
         };
-        let check_diagonal = |func: fn(usize, usize) -> (Vec<Square>, Option<GamePiece>)| {
-            if let (_, Some(p)) = func(f, r) {
+        let check_diagonal = |func: fn(&Self, usize, usize) -> (Vec<Square>, Option<GamePiece>)| {
+            if let (_, Some(p)) = func(self, f, r) {
                 match p.piece {
                     Piece::Bishop | Piece::Queen if p.color == color => return true,
                     _ => return false,
@@ -322,14 +327,14 @@ impl Position {
             }
             false
         };
-        check_straight(self.look_up)
-            || check_straight(self.look_right)
-            || check_straight(self.look_down)
-            || check_straight(self.look_left)
-            || check_diagonal(self.look_up_right)
-            || check_diagonal(self.look_down_right)
-            || check_diagonal(self.look_down_left)
-            || check_diagonal(self.look_up_right)
+        check_straight(Self::look_up)
+            || check_straight(Self::look_right)
+            || check_straight(Self::look_down)
+            || check_straight(Self::look_left)
+            || check_diagonal(Self::look_up_right)
+            || check_diagonal(Self::look_down_right)
+            || check_diagonal(Self::look_down_left)
+            || check_diagonal(Self::look_up_right)
     }
 
     /* lookUp and other look functions look in a direction on the board from a starting square.
@@ -338,7 +343,7 @@ impl Position {
     fn look_up(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::new();
         let mut piece = None;
-        for i in (r + 1)..8 {
+        for i in BoardRange::new(r, 1, 8) {
             squares.push(Square::new(f, i));
             if self.board[i as usize][f].is_some() {
                 piece = self.board[i as usize][f];
@@ -351,8 +356,8 @@ impl Position {
     fn look_up_right(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::with_capacity(20);
         let mut piece = None;
-        for i in (r + 1)..8 {
-            for j in (f + 1)..8 {
+        for i in BoardRange::new(r, 1, 8) {
+            for j in BoardRange::new(f, 1, 8) {
                 squares.push(Square::new(j, i));
                 if self.board[i][j].is_some() {
                     piece = self.board[i][j];
@@ -366,7 +371,7 @@ impl Position {
     fn look_right(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::new();
         let mut piece = None;
-        for i in (f + 1)..8 {
+        for i in BoardRange::new(f, 1, 8) {
             squares.push(Square::new(i, r));
             if self.board[r][i as usize].is_some() {
                 piece = self.board[r][i as usize];
@@ -379,8 +384,8 @@ impl Position {
     fn look_down_right(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::with_capacity(20);
         let mut piece = None;
-        for i in (r - 1)..=0 {
-            for j in (f + 1)..8 {
+        for i in BoardRange::new(r, -1, 0) {
+            for j in BoardRange::new(f, 1, 8) {
                 squares.push(Square::new(j, i));
                 if self.board[i][j].is_some() {
                     piece = self.board[i][j];
@@ -394,7 +399,7 @@ impl Position {
     fn look_down(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::new();
         let mut piece = None;
-        for i in (r - 1)..=0 {
+        for i in BoardRange::new(r, -1, 0) {
             squares.push(Square::new(f, i));
             if let None = self.board[i as usize][f] {
                 piece = self.board[i as usize][f];
@@ -407,8 +412,8 @@ impl Position {
     fn look_down_left(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::with_capacity(20);
         let mut piece = None;
-        for i in (r - 1)..=0 {
-            for j in (f - 1)..=0 {
+        for i in BoardRange::new(r, -1, 0) {
+            for j in BoardRange::new(f, -1, 0) {
                 squares.push(Square::new(j, i));
                 if self.board[i][j].is_some() {
                     piece = self.board[i][j];
@@ -419,11 +424,12 @@ impl Position {
         (squares, piece)
     }
 
+    // TODO Fix broken range iterations. Usize can't be negative.
     fn look_left(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::new();
         let mut piece = None;
-        for i in (f - 1)..=0 {
-            squares.push(Square::new(i, r));
+        for i in BoardRange::new(f, -1, 0) {
+            squares.push(Square::new(i as usize, r));
             if let None = self.board[r][i as usize] {
                 piece = self.board[r][i as usize];
                 break;
@@ -435,11 +441,11 @@ impl Position {
     fn look_up_left(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::with_capacity(20);
         let mut piece = None;
-        for i in (r + 1)..8 {
-            for j in (f - 1)..=0 {
-                squares.push(Square::new(j, i));
-                if self.board[i][j].is_some() {
-                    piece = self.board[i][j];
+        for i in BoardRange::new(r, 1, 8) {
+            for j in BoardRange::new(f, -1, 0) {
+                squares.push(Square::new(j as usize, i));
+                if self.board[i][j as usize].is_some() {
+                    piece = self.board[i][j as usize];
                     break;
                 }
             }
@@ -462,7 +468,7 @@ impl Position {
         if f as i32 - 2 >= 0 && r + 1 < 8 {
             squares.push(Square::new(f - 2, r + 1));
         }
-        if f as i32 - 2 < 8 && r as i32 - 1 >= 0 {
+        if f as i32 - 2 >= 0 && r as i32 - 1 >= 0 {
             squares.push(Square::new(f - 2, r - 1));
         }
 
@@ -516,6 +522,37 @@ impl Position {
             }
             None => true,
         }
+    }
+}
+
+// Type for generating a range for iterating the board in a safe and convenient way.
+enum BoardRange {
+    Forward(Range<usize>),
+    Backward(Rev<Range<usize>>),
+}
+
+impl Iterator for BoardRange {
+    type Item = usize;
+    fn next(&mut self) -> Option<usize> {
+        match self {
+            BoardRange::Forward(range) => range.next(),
+            BoardRange::Backward(range) => range.next(),
+        }
+    }
+}
+
+// Note that a range starting with a negative start or end will cause an empty range to be created.
+impl BoardRange {
+    fn new(start: usize, start_modifier: isize, end: usize) -> BoardRange {
+        let start = start as isize + start_modifier;
+        let end = end as isize;
+        if start < 0 || end < 0 {
+            return BoardRange::Forward(0..0);
+        }
+        if start >= end {
+            return BoardRange::Backward((end as usize..start as usize).rev());
+        }
+        BoardRange::Forward(start as usize..end as usize)
     }
 }
 
