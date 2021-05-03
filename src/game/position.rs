@@ -424,7 +424,6 @@ impl Position {
         (squares, piece)
     }
 
-    // TODO Fix broken range iterations. Usize can't be negative.
     fn look_left(&self, f: usize, r: usize) -> (Vec<Square>, Option<GamePiece>) {
         let mut squares = Vec::<Square>::new();
         let mut piece = None;

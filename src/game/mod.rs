@@ -73,20 +73,20 @@ fn game_loop(color: Color, player_color: Color, g: &mut GameContext) {
 
     if color == player_color {
         let chess_move = get_move();
-        println!("{}", chess_move);
         g.make_move(chess_move)
             .expect("Something went wrong processing the move\n");
         println!("{}", g.position);
         game_loop(opp_color, player_color, g);
     } else {
-        // println!("I think my moves are {:?}\n", g.position.get_moves(color))
+        println!("I think my moves are {:?}\n", g.position.get_moves(color));
 
         let engine_move = engine::think(g, color);
-        // println!("Engine Move: {}\n", engine_move);
-        // g.make_move(engine_move);
-        // println!("Moves so far: {}\n", g.moves);
-        // println!("{}", g.position);
+        println!("Engine Move: {}\n", engine_move);
+        g.make_move(engine_move)
+            .expect("Something went wrong calculating the next move");
+        println!("Moves so far: {:?}\n", g.chess_moves);
+        println!("{}", g.position);
         // println!("I think your moves are {}}\n", g.position.GetMoves(opp_color));
-        // game_loop(opp_color, player_color, g)
+        game_loop(opp_color, player_color, g)
     }
 }
