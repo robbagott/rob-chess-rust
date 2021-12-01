@@ -41,19 +41,41 @@ impl ChessMove {
         let rank1 = parse_rank(caps.get(2)?.as_str())?;
         let file2 = parse_file(caps.get(3)?.as_str())?;
         let rank2 = parse_rank(caps.get(4)?.as_str())?;
-        let promo_str = caps.get(5).map(|x| String::from(x.as_str())); // Optional promotion component
-        let promo_piece = Piece::from_str(&promo_str.unwrap());
-        let promo_piece_option = match promo_piece {
-            Ok(piece) => Some(piece),
-            Err(_) => None,
+
+        let promo_match = caps.get(5);
+        let promo_str = match promo_match {
+            Some(p) => Some(p.as_str()), // Optional promotion component
+            None => None,
+        };
+        let promo_piece = match promo_str {
+            Some(s) => Some(Piece::from_str(s)),
+            None => None,
+        };
+        let promo_option = match promo_piece {
+            Some(Ok(p)) => Some(p),
+            _ => None,
         };
         return Some(ChessMove::new(
             file1,
             rank1 as usize,
             file2,
             rank2 as usize,
-            promo_piece_option,
+            promo_option,
         ));
+    }
+
+    fn num_to_file(i: usize) -> &'static str {
+        match i {
+            0 => "a",
+            1 => "b",
+            2 => "c",
+            3 => "d",
+            4 => "e",
+            5 => "f",
+            6 => "g",
+            7 => "h",
+            _ => "x",
+        }
     }
 }
 
@@ -83,7 +105,11 @@ impl Display for ChessMove {
         write!(
             f,
             "{}{}{}{}{}",
-            self.o_file, self.o_rank, self.n_file, self.n_rank, promo_str
+            Self::num_to_file(self.o_file),
+            self.o_rank + 1,
+            Self::num_to_file(self.n_file),
+            self.n_rank + 1,
+            promo_str
         )
     }
 }

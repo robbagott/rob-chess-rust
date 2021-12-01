@@ -4,8 +4,9 @@ use super::game_context::GameContext;
 use super::position::Position;
 use super::tree::Node;
 use super::tree::Tree;
+use std::cmp::Ordering;
 
-static THINK_DEPTH: u32 = 3;
+static THINK_DEPTH: u32 = 1;
 
 pub fn think(g: &mut GameContext, color: Color) -> ChessMove {
     // Get an initial move
@@ -30,20 +31,25 @@ pub fn think_depth(g: &mut GameContext, color: Color, depth: u32) -> ChessMove {
     for child in &g.tree.children {
         start_moves.push(&child.chess_move);
     }
-    println!("think_depth start: I think my moves are {:?}", start_moves);
+    println!(
+        "think_depth start: I think my moves are {}",
+        start_moves
+            .iter()
+            .fold(String::new(), |acc, &arg| acc + ", " + &arg.to_string())
+    );
 
     // Calculate possible moves
     let alpha = f64::INFINITY;
     let beta = f64::NEG_INFINITY;
     let best_move_so_far: ChessMove;
-    for child in g.tree.children {
+    for child in g.tree.children.iter_mut() {
         let curr_move = &child.chess_move;
         // Keep track of move details so we can roll back.
         let old_piece = p.board[curr_move.o_rank][curr_move.o_file];
         let captured_piece = p.board[curr_move.n_rank][curr_move.n_file];
 
         p.make_move(&curr_move);
-        let eval = -calculate(p, color.opp_color(), depth, -beta, -alpha, &mut child);
+        let eval = -calculate(p, color.opp_color(), depth, -beta, -alpha, child);
     }
 
     ChessMove::from_algebraic("d7d5").unwrap()
@@ -79,11 +85,14 @@ fn calculate(
     // Calculate possible moves
     let mut best_so_far = f64::NEG_INFINITY;
     let mut alpha = alpha;
-    for child in &mut node.children {
-        let chess_move = &child.chess_move;
+    for child in node.children.iter_mut() {
+        let chess_move = child.chess_move;
         let old_piece = p.board[chess_move.o_rank][chess_move.o_file];
         let captured_piece = p.board[chess_move.n_rank][chess_move.n_file];
-        p.make_move(&chess_move);
+        match p.make_move(&chess_move) {
+            Ok(_) => (),
+            Err(err) => println!("Failed to make move {}", chess_move),
+        };
         child.eval = Some(-calculate(
             p,
             color.opp_color(),
@@ -118,5 +127,10 @@ fn evaluate(p: &Position, color: Color) -> f64 {
 
 // TODO Fix unsafe unwrap in elegant (hopefully) way.
 fn sort_moves(moves: &mut Vec<Node>) -> () {
-    moves.sort_by(|a, b| b.eval.unwrap().partial_cmp(&a.eval.unwrap()).unwrap());
+    moves.sort_by(|a, b| match (a.eval, b.eval) {
+        (Some(a), Some(b)) => b.partial_cmp(&a).unwrap(),
+        (Some(a), None) => Ordering::Greater,
+        (None, Some(b)) => Ordering::Less,
+        _ => Ordering::Equal,
+    });
 }

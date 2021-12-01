@@ -78,8 +78,6 @@ fn game_loop(color: Color, player_color: Color, g: &mut GameContext) {
         println!("{}", g.position);
         game_loop(opp_color, player_color, g);
     } else {
-        println!("I think my moves are {:?}\n", g.position.get_moves(color));
-
         let engine_move = engine::think(g, color);
         println!("Engine Move: {}\n", engine_move);
         g.make_move(engine_move)
