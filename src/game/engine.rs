@@ -6,12 +6,11 @@ use super::tree::Node;
 use super::tree::Tree;
 use std::cmp::Ordering;
 
-static THINK_DEPTH: u32 = 1;
+static THINK_DEPTH: u32 = 4;
 
 pub fn think(g: &mut GameContext, color: Color) -> ChessMove {
     // Get an initial move
-    let strongest_move = think_depth(g, color, THINK_DEPTH);
-    strongest_move
+    think_depth(g, color, THINK_DEPTH)
 }
 
 // TODO
@@ -39,20 +38,42 @@ pub fn think_depth(g: &mut GameContext, color: Color, depth: u32) -> ChessMove {
     );
 
     // Calculate possible moves
-    let alpha = f64::INFINITY;
+    let mut alpha = f64::INFINITY;
     let beta = f64::NEG_INFINITY;
-    let best_move_so_far: ChessMove;
+    let mut best_so_far = f64::NEG_INFINITY;
+    let mut best_move_so_far = None;
     for child in g.tree.children.iter_mut() {
         let curr_move = &child.chess_move;
+        let or = curr_move.o_rank;
+        let of = curr_move.o_file;
+        let nr = curr_move.n_rank;
+        let nf = curr_move.n_file;
+
         // Keep track of move details so we can roll back.
         let old_piece = p.board[curr_move.o_rank][curr_move.o_file];
         let captured_piece = p.board[curr_move.n_rank][curr_move.n_file];
 
-        p.make_move(&curr_move);
+        match p.make_move(&curr_move) {
+            Err(_) => panic!("Unable to make move! in think_depth!"),
+            _ => (),
+        };
+
         let eval = -calculate(p, color.opp_color(), depth, -beta, -alpha, child);
+        if eval > best_so_far {
+            best_move_so_far = Some(child.chess_move);
+            best_so_far = eval
+        }
+
+        alpha = f64::max(alpha, best_so_far);
+
+        p.board[or][of] = old_piece;
+        p.board[nr][nf] = captured_piece;
     }
 
-    ChessMove::from_algebraic("d7d5").unwrap()
+    match best_move_so_far {
+        Some(m) => m,
+        None => panic!(),
+    }
 }
 
 // Calculate is an implementation of negaMax. Perhaps someday it will implement negaScout.

@@ -110,7 +110,7 @@ impl Position {
             for f in 0..self.board[r].len() {
                 if let Some(p) = self.board[r][f] {
                     if p.color == color {
-                        moves.append(&mut self.get_moves_at(f, r, color));
+                        moves.append(&mut self.get_moves_at(f, r));
                     }
                 }
             }
@@ -127,7 +127,7 @@ impl Position {
         valid_moves
     }
 
-    fn get_moves_at(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
+    fn get_moves_at(&self, f: usize, r: usize) -> Vec<ChessMove> {
         let mut moves = Vec::<ChessMove>::with_capacity(20);
         let piece = self.board[r][f];
         if piece.is_none() {
@@ -142,9 +142,11 @@ impl Position {
             Piece::Queen => moves.append(&mut self.get_queen_moves(f, r, piece.color)),
             Piece::King => moves.append(&mut self.get_king_moves(f, r, piece.color)),
         };
+
         moves
     }
 
+    // TODO teach about en passant.
     fn get_pawn_moves(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
         let mut moves = Vec::<ChessMove>::with_capacity(4);
 
