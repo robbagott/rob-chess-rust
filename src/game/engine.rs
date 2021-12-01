@@ -26,9 +26,9 @@ pub fn think_depth(g: &mut GameContext, color: Color, depth: u32) -> ChessMove {
     }
 
     // TODO remove debugging...
-    let start_moves = vec![];
-    for child in g.tree.children {
-        start_moves.push(child.chess_move);
+    let start_moves = &mut vec![];
+    for child in &g.tree.children {
+        start_moves.push(&child.chess_move);
     }
     println!("think_depth start: I think my moves are {:?}", start_moves);
 
@@ -37,13 +37,13 @@ pub fn think_depth(g: &mut GameContext, color: Color, depth: u32) -> ChessMove {
     let beta = f64::NEG_INFINITY;
     let best_move_so_far: ChessMove;
     for child in g.tree.children {
-        let curr_move = child.chess_move;
+        let curr_move = &child.chess_move;
         // Keep track of move details so we can roll back.
         let old_piece = p.board[curr_move.o_rank][curr_move.o_file];
         let captured_piece = p.board[curr_move.n_rank][curr_move.n_file];
 
         p.make_move(&curr_move);
-        let eval = -calculate(&mut p, color.opp_color(), depth, -beta, -alpha, &mut child);
+        let eval = -calculate(p, color.opp_color(), depth, -beta, -alpha, &mut child);
     }
 
     ChessMove::from_algebraic("d7d5").unwrap()
@@ -60,8 +60,8 @@ fn calculate(
     p: &mut Position,
     color: Color,
     depth: u32,
-    alpha: &mut f64,
-    beta: &mut f64,
+    alpha: f64,
+    beta: f64,
     node: &mut Node,
 ) -> f64 {
     if depth == 0 {
@@ -77,7 +77,8 @@ fn calculate(
     }
 
     // Calculate possible moves
-    let best_so_far = f64::NEG_INFINITY;
+    let mut best_so_far = f64::NEG_INFINITY;
+    let mut alpha = alpha;
     for child in &mut node.children {
         let chess_move = &child.chess_move;
         let old_piece = p.board[chess_move.o_rank][chess_move.o_file];
@@ -97,7 +98,7 @@ fn calculate(
         p.board[chess_move.o_rank][chess_move.o_file] = old_piece;
         p.board[chess_move.n_rank][chess_move.n_file] = captured_piece;
 
-        alpha = &mut f64::max(alpha, best_so_far);
+        alpha = f64::max(alpha, best_so_far);
         if alpha > -beta {
             sort_moves(&mut node.children);
             return best_so_far;

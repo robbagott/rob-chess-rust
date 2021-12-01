@@ -1,10 +1,12 @@
 use super::color::Color;
 
 use colored::*;
+use std::error::Error;
 use std::fmt;
+use std::str::FromStr;
 
 // Pawn, Rook, Knight, Bishop, Queen, and King are the values for a piece. None is provided for empty squares.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Piece {
     Pawn,
     Rook,
@@ -43,8 +45,35 @@ impl fmt::Display for Piece {
     }
 }
 
-// GamePiece represents a piece in a chess game. E.g. a black bishop.
 #[derive(Copy, Clone, Debug)]
+pub struct ParseError {}
+
+impl Error for ParseError {}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Failed to parse string into Piece")
+    }
+}
+
+impl FromStr for Piece {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "P" => return Ok(Piece::Pawn),
+            "R" => return Ok(Piece::Rook),
+            "N" => return Ok(Piece::Knight),
+            "b" => return Ok(Piece::Bishop),
+            "Q" => return Ok(Piece::Queen),
+            "K" => return Ok(Piece::King),
+            _ => return Err(ParseError {}),
+        };
+    }
+}
+
+// GamePiece represents a piece in a chess game. E.g. a black bishop.
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct GamePiece {
     pub piece: Piece,
     pub color: Color,
