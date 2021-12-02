@@ -3,7 +3,6 @@ use super::color::Color;
 use super::game_context::GameContext;
 use super::position::Position;
 use super::tree::Node;
-use super::tree::Tree;
 use std::cmp::Ordering;
 
 static THINK_DEPTH: u32 = 4;
@@ -112,7 +111,7 @@ fn calculate(
         let captured_piece = p.board[chess_move.n_rank][chess_move.n_file];
         match p.make_move(&chess_move) {
             Ok(_) => (),
-            Err(err) => println!("Failed to make move {}", chess_move),
+            Err(_) => println!("Failed to make move {}", chess_move),
         };
         child.eval = Some(-calculate(
             p,
@@ -142,7 +141,7 @@ fn calculate(
 }
 
 // TODO
-fn evaluate(p: &Position, color: Color) -> f64 {
+fn evaluate(_p: &Position, _color: Color) -> f64 {
     return 0.0;
 }
 
@@ -150,8 +149,8 @@ fn evaluate(p: &Position, color: Color) -> f64 {
 fn sort_moves(moves: &mut Vec<Node>) -> () {
     moves.sort_by(|a, b| match (a.eval, b.eval) {
         (Some(a), Some(b)) => b.partial_cmp(&a).unwrap(),
-        (Some(a), None) => Ordering::Greater,
-        (None, Some(b)) => Ordering::Less,
+        (Some(_), None) => Ordering::Greater,
+        (None, Some(_)) => Ordering::Less,
         _ => Ordering::Equal,
     });
 }
