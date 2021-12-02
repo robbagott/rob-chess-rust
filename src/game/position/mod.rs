@@ -412,7 +412,7 @@ impl Position {
         let mut piece = None;
         for i in BoardRange::new(r, -1, 0) {
             squares.push(Square::new(f, i));
-            if let None = self.board[i as usize][f] {
+            if self.board[i as usize][f].is_some() {
                 piece = self.board[i as usize][f];
                 break;
             }
@@ -440,7 +440,7 @@ impl Position {
         let mut piece = None;
         for i in BoardRange::new(f, -1, 0) {
             squares.push(Square::new(i as usize, r));
-            if let None = self.board[r][i as usize] {
+            if self.board[r][i as usize].is_some() {
                 piece = self.board[r][i as usize];
                 break;
             }

@@ -188,6 +188,7 @@ fn look_down_returns_expected_squares() {
     p.board[6][0] = None;
 
     let squares = p.look_down(0, 7);
+    println!("{:?}", squares);
     assert_eq!(squares.0.len(), 6);
     assert_eq!(
         squares.1.unwrap(),
