@@ -5,7 +5,7 @@ use super::position::Position;
 use super::tree::Node;
 use std::cmp::Ordering;
 
-static THINK_DEPTH: u32 = 4;
+static THINK_DEPTH: u32 = 6;
 
 pub fn think(g: &mut GameContext, color: Color) -> ChessMove {
     // Get an initial move
@@ -145,7 +145,6 @@ fn evaluate(_p: &Position, _color: Color) -> f64 {
     return 0.0;
 }
 
-// TODO Fix unsafe unwrap in elegant (hopefully) way.
 fn sort_moves(moves: &mut Vec<Node>) -> () {
     moves.sort_by(|a, b| match (a.eval, b.eval) {
         (Some(a), Some(b)) => b.partial_cmp(&a).unwrap(),

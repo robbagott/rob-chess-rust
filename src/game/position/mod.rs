@@ -566,7 +566,7 @@ impl BoardRange {
         let start = start as isize + start_modifier;
         let end = end as isize;
         // BoardRanges that begin off the board should be empty.
-        if (start > 7 || start < 0) {
+        if start > 7 || start < 0 {
             return BoardRange::Forward(0..0);
         }
         if start >= end {

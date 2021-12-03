@@ -1,6 +1,8 @@
 use super::chess_move::ChessMove;
+
 use super::position::Position;
 use super::tree::Tree;
+use std::mem;
 
 #[derive(Debug)]
 pub struct GameContext {
@@ -18,23 +20,20 @@ impl GameContext {
         }
     }
 
-    // MakeMove makes a move in the game and records it.
+    // Makes a move in the game and records it.
     pub fn make_move(&mut self, chess_move: ChessMove) -> Result<(), ()> {
-        self.position.make_move(&chess_move)
+        self.position.make_move(&chess_move)?;
+        self.chess_moves.push(chess_move);
 
-        // if ok := g.position.MakeMove(move); ok {
-        //     // Add move
-        //     g.moves = append(g.moves, move)
+        // Discard unused parts of the tree.
+        let children = &mut self.tree.children;
+        for node in children.into_iter() {
+            if node.chess_move == chess_move {
+                self.tree.children = mem::replace(&mut node.children, vec![]);
+                break;
+            }
+        }
 
-        //     // Throw away unused game tree.
-        //     for _, child := range g.gameTree.children {
-        //         if child.move == move {
-        //             g.gameTree = child
-        //             break
-        //         }
-        //     }
-        //     return true
-        // }
-        // return false
+        return Ok(());
     }
 }
