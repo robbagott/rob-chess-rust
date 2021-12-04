@@ -25,6 +25,7 @@ impl GameContext {
         self.position.make_move(&chess_move)?;
         self.chess_moves.push(chess_move);
 
+        //println!("{:?}", self.tree.children);
         // Discard unused parts of the tree.
         let children = &mut self.tree.children;
         for node in children.into_iter() {

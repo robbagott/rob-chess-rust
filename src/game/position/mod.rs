@@ -541,6 +541,21 @@ impl Position {
             None => true,
         }
     }
+
+    pub fn sum_material(&self, color: Color) -> f64 {
+        let mut sum = 0;
+        for r in BoardRange::new(0, 0, 7) {
+            for f in BoardRange::new(0, 0, 7) {
+                let piece = self.board[r][f];
+                if let Some(p) = piece {
+                    if p.color == color {
+                        sum += p.piece.value();
+                    }
+                }
+            }
+        }
+        sum as f64
+    }
 }
 
 // Type for generating a range for iterating the board in a safe and convenient way.

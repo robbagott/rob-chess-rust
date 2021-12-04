@@ -5,7 +5,7 @@ use super::position::Position;
 use super::tree::Node;
 use std::cmp::Ordering;
 
-static THINK_DEPTH: u32 = 6;
+static THINK_DEPTH: u32 = 9;
 
 pub fn think(g: &mut GameContext, color: Color) -> ChessMove {
     // Get an initial move
@@ -16,8 +16,10 @@ pub fn think(g: &mut GameContext, color: Color) -> ChessMove {
 pub fn think_depth(g: &mut GameContext, color: Color, depth: u32) -> ChessMove {
     let p = &mut g.position;
 
+    println!("{:?} color", color);
     // Check if there are moves on the node. If not, retrieve them and add them to the node.
     if g.tree.children.len() == 0 {
+        println!("children not found");
         let moves = p.get_moves(color);
         for chess_move in moves {
             g.tree.children.push(Node::new(chess_move, None));
@@ -53,7 +55,7 @@ pub fn think_depth(g: &mut GameContext, color: Color, depth: u32) -> ChessMove {
         let captured_piece = p.board[curr_move.n_rank][curr_move.n_file];
 
         match p.make_move(&curr_move) {
-            Err(_) => panic!("Unable to make move! in think_depth!"),
+            Err(_) => panic!("Unable to make move in think_depth!"),
             _ => (),
         };
 
@@ -69,10 +71,7 @@ pub fn think_depth(g: &mut GameContext, color: Color, depth: u32) -> ChessMove {
         p.board[nr][nf] = captured_piece;
     }
 
-    match best_move_so_far {
-        Some(m) => m,
-        None => panic!(),
-    }
+    best_move_so_far.expect("No best move so far!")
 }
 
 // Calculate is an implementation of negaMax. Perhaps someday it will implement negaScout.
@@ -128,21 +127,31 @@ fn calculate(
         p.board[chess_move.n_rank][chess_move.n_file] = captured_piece;
 
         alpha = f64::max(alpha, best_so_far);
-        if alpha > -beta {
+        if alpha >= beta {
             sort_moves(&mut node.children);
             return best_so_far;
         }
-
-        // From possible moves, choose optimal move. Return the optimal move with its evaluation.
-        sort_moves(&mut node.children);
-        return best_so_far;
     }
+    println!("{}", depth);
+    // From possible moves, choose optimal move. Return the optimal move with its evaluation.
+    sort_moves(&mut node.children);
     best_so_far
 }
 
 // TODO
-fn evaluate(_p: &Position, _color: Color) -> f64 {
-    return 0.0;
+fn evaluate(p: &Position, color: Color) -> f64 {
+    // For now, let's play like a child. Maximize material.
+    let side_sum = p.sum_material(color);
+
+    let opp_sum = p.sum_material(color.opp_color());
+
+    // let central_control = p.central_control(color) * 0.1;
+
+    // let opp_central_control = p.central_control(color.opp_color()) * 0.1;
+
+    //return sideSum - opp_sum + central_control - opp_central_control;
+    println!("{}", side_sum - opp_sum);
+    return side_sum - opp_sum;
 }
 
 fn sort_moves(moves: &mut Vec<Node>) -> () {

@@ -71,22 +71,15 @@ fn read_move() -> Result<String, io::Error> {
 fn game_loop(color: Color, player_color: Color, g: &mut GameContext) {
     let opp_color = color.opp_color();
 
-    if color == player_color {
-        let chess_move = get_move();
-        g.make_move(chess_move)
-            .expect("Something went wrong processing the move\n");
-        g.chess_moves.push(chess_move);
-        println!("{}", g.position);
-        game_loop(opp_color, player_color, g);
+    let chess_move = if color == player_color {
+        get_move()
     } else {
-        let engine_move = engine::think(g, color);
-        println!("Engine Move: {}\n", engine_move);
-        g.make_move(engine_move)
-            .expect("Something went wrong calculating the next move");
-        g.chess_moves.push(engine_move);
-        println!("Moves so far: {:?}\n", g.chess_moves);
-        println!("{}", g.position);
-        // println!("I think your moves are {}}\n", g.position.GetMoves(opp_color));
-        game_loop(opp_color, player_color, g)
-    }
+        engine::think(g, color)
+    };
+    g.make_move(chess_move)
+        .expect("Something went wrong processing the move\n");
+    g.chess_moves.push(chess_move);
+    println!("Moves so far: {:?}\n", g.chess_moves);
+    println!("{}", g.position);
+    game_loop(opp_color, player_color, g);
 }
