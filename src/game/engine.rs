@@ -9,7 +9,12 @@ static THINK_DEPTH: u32 = 6;
 
 pub fn think(g: &mut GameContext, color: Color) -> ChessMove {
     // Get an initial move
-    think_depth(g, color, THINK_DEPTH)
+    let mut best_move = None;
+    for i in 2..THINK_DEPTH {
+        println!("Thinking to depth {}", i);
+        best_move = Some(think_depth(g, color, i));
+    }
+    best_move.expect("Think failed!")
 }
 
 // TODO
@@ -27,16 +32,16 @@ pub fn think_depth(g: &mut GameContext, color: Color, depth: u32) -> ChessMove {
     }
 
     // TODO remove debugging...
-    let mut start_moves: Vec<&Option<ChessMove>> = vec![];
-    for child in &g.tree.children {
-        start_moves.push(&child.last_move);
-    }
-    println!(
-        "think_depth start: I think my moves are {}",
-        start_moves.into_iter().fold(String::new(), |acc, arg| acc
-            + ", "
-            + &arg.as_ref().map(|m| m.to_string()).unwrap_or("".to_owned()))
-    );
+    //let mut start_moves: Vec<&Option<ChessMove>> = vec![];
+    //for child in &g.tree.children {
+    //    start_moves.push(&child.last_move);
+    //}
+    //println!(
+    //    "think_depth start: I think my moves are {}",
+    //    start_moves.into_iter().fold(String::new(), |acc, arg| acc
+    //        + ", "
+    //        + &arg.as_ref().map(|m| m.to_string()).unwrap_or("".to_owned()))
+    //);
 
     // Calculate possible moves
     let (mut eval, best_move) = calculate(
