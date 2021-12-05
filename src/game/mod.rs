@@ -72,13 +72,19 @@ fn game_loop(color: Color, player_color: Color, g: &mut GameContext) {
     let opp_color = color.opp_color();
 
     let chess_move = if color == player_color {
+        println!(
+            "think_depth start: I think your moves are {}",
+            g.position
+                .get_moves(color)
+                .iter()
+                .fold(String::new(), |acc, &arg| acc + ", " + &arg.to_string())
+        );
         get_move()
     } else {
         engine::think(g, color)
     };
     g.make_move(chess_move)
         .expect("Something went wrong processing the move\n");
-    g.chess_moves.push(chess_move);
     println!("Moves so far: {:?}\n", g.chess_moves);
     println!("{}", g.position);
     game_loop(opp_color, player_color, g);

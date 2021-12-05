@@ -5,7 +5,7 @@ use super::position::Position;
 use super::tree::Node;
 use std::cmp::Ordering;
 
-static THINK_DEPTH: u32 = 9;
+static THINK_DEPTH: u32 = 6;
 
 pub fn think(g: &mut GameContext, color: Color) -> ChessMove {
     // Get an initial move
@@ -22,56 +22,34 @@ pub fn think_depth(g: &mut GameContext, color: Color, depth: u32) -> ChessMove {
         println!("children not found");
         let moves = p.get_moves(color);
         for chess_move in moves {
-            g.tree.children.push(Node::new(chess_move, None));
+            g.tree.children.push(Node::new(Some(chess_move), None));
         }
     }
 
     // TODO remove debugging...
-    let start_moves = &mut vec![];
+    let mut start_moves: Vec<&Option<ChessMove>> = vec![];
     for child in &g.tree.children {
-        start_moves.push(&child.chess_move);
+        start_moves.push(&child.last_move);
     }
     println!(
         "think_depth start: I think my moves are {}",
-        start_moves
-            .iter()
-            .fold(String::new(), |acc, &arg| acc + ", " + &arg.to_string())
+        start_moves.into_iter().fold(String::new(), |acc, arg| acc
+            + ", "
+            + &arg.as_ref().map(|m| m.to_string()).unwrap_or("".to_owned()))
     );
 
     // Calculate possible moves
-    let mut alpha = f64::INFINITY;
-    let beta = f64::NEG_INFINITY;
-    let mut best_so_far = f64::NEG_INFINITY;
-    let mut best_move_so_far = None;
-    for child in g.tree.children.iter_mut() {
-        let curr_move = &child.chess_move;
-        let or = curr_move.o_rank;
-        let of = curr_move.o_file;
-        let nr = curr_move.n_rank;
-        let nf = curr_move.n_file;
-
-        // Keep track of move details so we can roll back.
-        let old_piece = p.board[curr_move.o_rank][curr_move.o_file];
-        let captured_piece = p.board[curr_move.n_rank][curr_move.n_file];
-
-        match p.make_move(&curr_move) {
-            Err(_) => panic!("Unable to make move in think_depth!"),
-            _ => (),
-        };
-
-        let eval = -calculate(p, color.opp_color(), depth, -beta, -alpha, child);
-        if eval > best_so_far {
-            best_move_so_far = Some(child.chess_move);
-            best_so_far = eval
-        }
-
-        alpha = f64::max(alpha, best_so_far);
-
-        p.board[or][of] = old_piece;
-        p.board[nr][nf] = captured_piece;
-    }
-
-    best_move_so_far.expect("No best move so far!")
+    let (mut eval, best_move) = calculate(
+        p,
+        color,
+        depth,
+        f64::NEG_INFINITY,
+        f64::INFINITY,
+        &mut g.tree,
+    );
+    eval = -eval;
+    println!("eval = {}", eval);
+    best_move.expect("Did not receive move from calculate")
 }
 
 // Calculate is an implementation of negaMax. Perhaps someday it will implement negaScout.
@@ -85,57 +63,55 @@ fn calculate(
     p: &mut Position,
     color: Color,
     depth: u32,
-    alpha: f64,
+    mut alpha: f64,
     beta: f64,
     node: &mut Node,
-) -> f64 {
+) -> (f64, Option<ChessMove>) {
+    // If we're at final depth, evaluate.
     if depth == 0 {
-        return evaluate(&p, color);
+        return (evaluate(&p, color), None);
     }
 
     // Check if there are no moves on the node. If not, retrieve them and add them to the node.
     if node.children.len() == 0 {
         let moves = p.get_moves(color);
         for chess_move in moves {
-            node.children.push(Node::new(chess_move, None));
+            node.children.push(Node::new(Some(chess_move), None));
         }
     }
 
     // Calculate possible moves
-    let mut best_so_far = f64::NEG_INFINITY;
-    let mut alpha = alpha;
+    let (mut best_eval, mut best_move) = (f64::NEG_INFINITY, None);
     for child in node.children.iter_mut() {
-        let chess_move = child.chess_move;
-        let old_piece = p.board[chess_move.o_rank][chess_move.o_file];
-        let captured_piece = p.board[chess_move.n_rank][chess_move.n_file];
-        match p.make_move(&chess_move) {
-            Ok(_) => (),
-            Err(_) => println!("Failed to make move {}", chess_move),
-        };
-        child.eval = Some(-calculate(
-            p,
-            color.opp_color(),
-            depth - 1,
-            -beta,
-            -alpha,
-            child,
-        ));
-        best_so_far = f64::max(best_so_far, child.eval.unwrap());
+        // Make the move.
+        let child_move = child.last_move.expect("Couldn't get child move!");
+        let old_piece = p.board[child_move.o_rank][child_move.o_file];
+        let captured_piece = p.board[child_move.n_rank][child_move.n_file];
+        p.make_move(&child_move)
+            .expect(&format!("Failed to make move {}", child_move));
+        // println!("depth {} node", depth);
+        let (mut eval, _) = calculate(p, color.opp_color(), depth - 1, -beta, -alpha, child);
+        eval = -eval;
+        child.eval = Some(eval);
+        if eval > best_eval {
+            best_eval = eval;
+            best_move = Some(child_move);
+        }
+        best_eval = f64::max(best_eval, eval);
 
         // Roll back move.
-        p.board[chess_move.o_rank][chess_move.o_file] = old_piece;
-        p.board[chess_move.n_rank][chess_move.n_file] = captured_piece;
+        p.board[child_move.o_rank][child_move.o_file] = old_piece;
+        p.board[child_move.n_rank][child_move.n_file] = captured_piece;
 
-        alpha = f64::max(alpha, best_so_far);
+        alpha = f64::max(alpha, best_eval);
         if alpha >= beta {
-            sort_moves(&mut node.children);
-            return best_so_far;
+            break;
         }
     }
-    println!("{}", depth);
+
     // From possible moves, choose optimal move. Return the optimal move with its evaluation.
     sort_moves(&mut node.children);
-    best_so_far
+    (best_eval, best_move)
 }
 
 // TODO
@@ -149,8 +125,8 @@ fn evaluate(p: &Position, color: Color) -> f64 {
 
     // let opp_central_control = p.central_control(color.opp_color()) * 0.1;
 
-    //return sideSum - opp_sum + central_control - opp_central_control;
-    println!("{}", side_sum - opp_sum);
+    // return sideSum - opp_sum + central_control - opp_central_control;
+    //println!("Evaluation: {}", side_sum - opp_sum);
     return side_sum - opp_sum;
 }
 
