@@ -27,21 +27,39 @@ type Board = [[Option<GamePiece>; 8]; 8];
 #[derive(Debug)]
 pub struct Position {
     pub board: Board,
-    pub o_o_o_white: bool,
-    pub o_o_white: bool,
-    pub o_o_o_black: bool,
-    pub o_o_black: bool,
+    pub castling_rights: CastlingRights,
+}
+
+#[derive(Debug)]
+pub struct CastlingRights {
+    o_o_black: bool,
+    o_o_o_black: bool,
+    o_o_white: bool,
+    o_o_o_white: bool,
+}
+
+impl CastlingRights {
+    pub fn new() -> Self {
+        CastlingRights {
+            o_o_black: false,
+            o_o_o_black: false,
+            o_o_white: false,
+            o_o_o_white: false,
+        }
+    }
 }
 
 impl Position {
-    pub fn new() -> Position {
+    pub fn new() -> Self {
         let board = [[None; 8]; 8];
         let mut pos = Position {
             board,
-            o_o_o_white: true,
-            o_o_white: true,
-            o_o_o_black: true,
-            o_o_black: true,
+            castling_rights: CastlingRights {
+                o_o_o_white: true,
+                o_o_white: true,
+                o_o_o_black: true,
+                o_o_black: true,
+            },
         };
 
         pos.reset();
@@ -83,32 +101,101 @@ impl Position {
             }
         }
 
-        self.o_o_o_white = true;
-        self.o_o_white = true;
-        self.o_o_o_black = true;
-        self.o_o_black = true;
+        self.castling_rights.o_o_o_white = true;
+        self.castling_rights.o_o_white = true;
+        self.castling_rights.o_o_o_black = true;
+        self.castling_rights.o_o_black = true;
     }
 
-    pub fn make_move(&mut self, chess_move: &ChessMove) -> Result<(), ()> {
-        let or = chess_move.o_rank;
-        let of = chess_move.o_file;
-        let nr = chess_move.n_rank;
-        let nf = chess_move.n_file;
+    pub fn make_move(&mut self, m: &ChessMove) -> Result<CastlingRights, ()> {
+        let or = m.o_rank;
+        let of = m.o_file;
+        let nr = m.n_rank;
+        let nf = m.n_file;
 
         if of > 7 || or > 7 || nf > 7 || nr > 7 {
             Err(())
         } else {
             // TODO handle promotion
+            let castling_rights_changes = self.maybe_remove_castling(m);
             // Make normal move
-            let piece = self.board[or][of];
-            self.board[or][of] = None;
-            self.board[nr][nf] = piece;
-            Ok(())
+            let piece = self.board[m.o_rank][m.o_file];
+            self.board[m.o_rank][m.o_file] = None;
+            self.board[m.n_rank][m.n_file] = piece;
+            Ok(castling_rights_changes)
         }
     }
 
+    // Returns a struct of castling rights changes. If a member is set to false, it
+    // does not indicate it is now false, but instead that it was not modified.
+    // This is useful for later undoing a move.
+    pub fn maybe_remove_castling(&mut self, m: &ChessMove) -> CastlingRights {
+        // TODO isn't this weird that we can mutate self.castling_rights with a normal ol
+        // reference?
+        let cr: &CastlingRights = &self.castling_rights;
+        let mut changed = CastlingRights::new();
+        if let Some(p) = self.board[m.o_rank][m.o_file] {
+            if p.piece == Piece::King {
+                if !cr.o_o_black && p.color == Color::Black {
+                    cr.o_o_black = false;
+                    changed.o_o_black = true;
+                } else if !cr.o_o_white && p.color == Color::White {
+                    cr.o_o_white = false;
+                    changed.o_o_white = true;
+                }
+            }
+            if !cr.o_o_black && (m.o_rank == 7 && m.o_file == 7 || m.n_rank == 7 && m.n_file == 7) {
+                cr.o_o_black = false;
+                changed.o_o_black = true;
+            } else if !cr.o_o_white
+                && (m.o_rank == 0 && m.o_file == 7 || m.n_rank == 0 && m.n_file == 7)
+            {
+                cr.o_o_white = false;
+                changed.o_o_white = true;
+            } else if !cr.o_o_o_black
+                && (m.o_rank == 7 && m.o_file == 0 || m.n_rank == 7 && m.n_file == 0)
+            {
+                cr.o_o_o_black = false;
+                changed.o_o_o_black = true;
+            } else if !cr.o_o_o_white
+                && (m.o_rank == 0 && m.o_file == 0 || m.n_rank == 0 && m.n_file == 0)
+            {
+                cr.o_o_o_white = false;
+                changed.o_o_o_white = true;
+            }
+        }
+        changed
+    }
+
+    pub fn undo_move(
+        &mut self,
+        chess_move: &ChessMove,
+        castling_rights_changes: CastlingRights,
+    ) -> Result<(), ()> {
+        // Undo castling rights changes
+        if castling_rights_changes.o_o_white {
+            self.castling_rights.o_o_white = true;
+        }
+        if castling_rights_changes.o_o_o_white {
+            self.castling_rights.o_o_o_white = true;
+        }
+        if castling_rights_changes.o_o_black {
+            self.castling_rights.o_o_black = true;
+        }
+        if castling_rights_changes.o_o_o_black {
+            self.castling_rights.o_o_o_black = true;
+        }
+
+        // TODO Promotion
+
+        // Undo move
+        self.board[chess_move.o_rank][chess_move.o_file] = old_piece;
+        self.board[chess_move.n_rank][chess_move.n_file] = captured_piece;
+
+        Ok(())
+    }
+
     // TODO combine check pruning with get_moves_at for mem/cpu efficiency boost.
-    // TODO fix self mutability.
     pub fn get_moves(&mut self, color: Color) -> Vec<ChessMove> {
         let mut moves = Vec::<ChessMove>::with_capacity(20);
 

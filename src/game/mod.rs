@@ -9,6 +9,7 @@ mod tree;
 use chess_move::ChessMove;
 use color::Color;
 use game_context::GameContext;
+use position::Position;
 use std::io;
 
 pub fn start_user_session() {
@@ -43,22 +44,22 @@ fn prompt_color() -> Color {
     }
 }
 
-fn get_move() -> ChessMove {
+fn get_move(p: &Position) -> ChessMove {
     println!("Move: ");
     let move_str = match read_move() {
         Ok(input) => input,
         Err(err) => {
             // Abort assignment and start the process over.
             println!("Error reading input: {}", err);
-            return get_move();
+            return get_move(p);
         }
     };
 
-    match ChessMove::from_algebraic(&move_str) {
-        Some(res) => res,
-        None => {
+    match ChessMove::from_algebraic(&move_str, p) {
+        Ok(res) => res,
+        Err(err) => {
             println!("The move entered could not be understood. Please enter a move in long algrebraic chess notation.");
-            return get_move();
+            return get_move(p);
         }
     }
 }
@@ -79,7 +80,7 @@ fn game_loop(color: Color, player_color: Color, g: &mut GameContext) {
                 .iter()
                 .fold(String::new(), |acc, &arg| acc + ", " + &arg.to_string())
         );
-        get_move()
+        get_move(&g.position)
     } else {
         engine::think(g, color)
     };

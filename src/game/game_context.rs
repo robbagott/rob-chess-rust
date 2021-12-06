@@ -1,5 +1,7 @@
 use super::chess_move::ChessMove;
 
+use super::color::Color;
+use super::game_piece::Piece;
 use super::position::Position;
 use super::tree::Node;
 use std::mem;

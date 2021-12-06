@@ -1,7 +1,9 @@
-use super::game_piece::Piece;
+use super::game_piece::{GamePiece, Piece};
+use super::position::Position;
 use regex::Regex;
 use std::fmt;
 use std::fmt::Display;
+use std::num::ParseIntError;
 use std::str::FromStr;
 
 const ALGEBRAIC_REGEX: &str =
@@ -10,57 +12,60 @@ const ALGEBRAIC_REGEX: &str =
 // Move represents a move on the chess board. It encompasses a piece, the old square and the new square.
 #[derive(Debug, Copy, Clone)]
 pub struct ChessMove {
+    pub moved_piece: GamePiece,
     pub o_file: usize,
     pub o_rank: usize,
     pub n_file: usize,
     pub n_rank: usize,
     pub promo_piece: Option<Piece>,
+    pub captured_piece: Option<GamePiece>,
 }
 
 impl ChessMove {
     pub fn new(
+        moved_piece: GamePiece,
         o_file: usize,
         o_rank: usize,
         n_file: usize,
         n_rank: usize,
         promo_piece: Option<Piece>,
+        captured_piece: Option<GamePiece>,
     ) -> ChessMove {
         ChessMove {
+            moved_piece,
             o_file,
             o_rank,
             n_file,
             n_rank,
             promo_piece,
+            captured_piece,
         }
     }
-    pub fn from_algebraic(alg_move: &str) -> Option<ChessMove> {
+    pub fn from_algebraic(alg_move: &str, p: &Position) -> Result<ChessMove, ParseMoveError> {
         let sanitized = &alg_move.trim().to_lowercase();
         let move_ex = Regex::new(ALGEBRAIC_REGEX).unwrap();
-        let caps = move_ex.captures(sanitized)?;
-        let file1 = parse_file(caps.get(1)?.as_str())?;
-        let rank1 = parse_rank(caps.get(2)?.as_str())?;
-        let file2 = parse_file(caps.get(3)?.as_str())?;
-        let rank2 = parse_rank(caps.get(4)?.as_str())?;
+        let caps = move_ex
+            .captures(sanitized)
+            .ok_or(ParseMoveError::PieceParseError)?;
+        let file1 = parse_file(caps.get(1).ok_or(ParseMoveError::FileParseError)?.as_str())?;
+        let rank1 = parse_rank(caps.get(2).ok_or(ParseMoveError::RankParseError)?.as_str())?;
+        let file2 = parse_file(caps.get(3).ok_or(ParseMoveError::FileParseError)?.as_str())?;
+        let rank2 = parse_rank(caps.get(4).ok_or(ParseMoveError::RankParseError)?.as_str())?;
 
         let promo_match = caps.get(5);
-        let promo_str = match promo_match {
-            Some(p) => Some(p.as_str()), // Optional promotion component
-            None => None,
-        };
-        let promo_piece = match promo_str {
-            Some(s) => Some(Piece::from_str(s)),
-            None => None,
-        };
-        let promo_option = match promo_piece {
-            Some(Ok(p)) => Some(p),
-            _ => None,
-        };
-        return Some(ChessMove::new(
+        let promo_str = promo_match.map(|pm| pm.as_str());
+        let promo_piece = promo_str.map(|p| Piece::from_str(p));
+        let promo_option = promo_piece.map(|Ok(p)| p);
+        let moved_piece = p.board[rank1][file1].ok_or(ParseMoveError::IllegalMoveError)?;
+        let captured_piece = p.board[rank2][file2];
+        return Ok(ChessMove::new(
+            moved_piece,
             file1,
             rank1 as usize,
             file2,
             rank2 as usize,
             promo_option,
+            captured_piece,
         ));
     }
 
@@ -114,12 +119,27 @@ impl Display for ChessMove {
     }
 }
 
-fn parse_file(file: &str) -> Option<usize> {
-    let num_char = file.chars().next()?.to_lowercase().next()?;
-    let digit = (num_char as usize) - ('a' as usize);
-    Some(digit)
+pub enum ParseMoveError {
+    PieceParseError,
+    FileParseError,
+    RankParseError,
+    IllegalMoveError,
 }
 
-fn parse_rank(rank: &str) -> Option<usize> {
-    rank.parse::<usize>().ok().map(|n| n - 1)
+fn parse_file(file: &str) -> Result<usize, ParseMoveError> {
+    let num_char = file
+        .chars()
+        .next()
+        .ok_or(ParseMoveError::FileParseError)?
+        .to_lowercase()
+        .next()
+        .ok_or(ParseMoveError::FileParseError)?;
+    let digit = (num_char as usize) - ('a' as usize);
+    Ok(digit)
+}
+
+fn parse_rank(rank: &str) -> Result<usize, ParseMoveError> {
+    rank.parse::<usize>()
+        .map(|n| n - 1)
+        .map_err(|_| ParseMoveError::RankParseError)
 }
