@@ -90,9 +90,8 @@ fn calculate(
     for child in node.children.iter_mut() {
         // Make the move.
         let child_move = child.last_move.expect("Couldn't get child move!");
-        let old_piece = p.board[child_move.o_rank][child_move.o_file];
-        let captured_piece = p.board[child_move.n_rank][child_move.n_file];
-        p.make_move(&child_move)
+        let castling_rights_changes = p
+            .make_move(&child_move)
             .expect(&format!("Failed to make move {}", child_move));
         // println!("depth {} node", depth);
         let (mut eval, _) = calculate(p, color.opp_color(), depth - 1, -beta, -alpha, child);
@@ -105,8 +104,8 @@ fn calculate(
         best_eval = f64::max(best_eval, eval);
 
         // Roll back move.
-        p.board[child_move.o_rank][child_move.o_file] = old_piece;
-        p.board[child_move.n_rank][child_move.n_file] = captured_piece;
+        p.undo_move(&child_move, castling_rights_changes)
+            .expect("Failed to roll back move.");
 
         alpha = f64::max(alpha, best_eval);
         if alpha >= beta {

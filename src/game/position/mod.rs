@@ -132,7 +132,7 @@ impl Position {
     pub fn maybe_remove_castling(&mut self, m: &ChessMove) -> CastlingRights {
         // TODO isn't this weird that we can mutate self.castling_rights with a normal ol
         // reference?
-        let cr: &CastlingRights = &self.castling_rights;
+        let cr = &mut self.castling_rights;
         let mut changed = CastlingRights::new();
         if let Some(p) = self.board[m.o_rank][m.o_file] {
             if p.piece == Piece::King {
@@ -189,8 +189,8 @@ impl Position {
         // TODO Promotion
 
         // Undo move
-        self.board[chess_move.o_rank][chess_move.o_file] = old_piece;
-        self.board[chess_move.n_rank][chess_move.n_file] = captured_piece;
+        self.board[chess_move.o_rank][chess_move.o_file] = Some(chess_move.moved_piece);
+        self.board[chess_move.n_rank][chess_move.n_file] = chess_move.captured_piece;
 
         Ok(())
     }
@@ -260,14 +260,38 @@ impl Position {
         let r_up_2 = (r as i32 + r_incr * 2) as usize;
         if r == 1 && color == Color::White || r == 6 && color == Color::Black {
             if let None = self.board[r_up][f] {
-                moves.push(ChessMove::new(f, r, f, r_up, None));
+                moves.push(ChessMove::new(
+                    self.board[r][f].expect("Expected pawn in get_pawn_moves."),
+                    f,
+                    r,
+                    f,
+                    r_up,
+                    None,
+                    self.board[r_up][f],
+                ));
                 if let None = self.board[r_up_2][f] {
-                    moves.push(ChessMove::new(f, r, f, r_up_2, None));
+                    moves.push(ChessMove::new(
+                        self.board[r][f].expect("Expected pawn in get_pawn_moves."),
+                        f,
+                        r,
+                        f,
+                        r_up_2,
+                        None,
+                        self.board[r_up_2][f],
+                    ));
                 }
             }
         } else if r > 1 && color == Color::White || r < 6 && color == Color::Black {
             if let None = self.board[r_up][f] {
-                moves.push(ChessMove::new(f, r, f, r_up, None))
+                moves.push(ChessMove::new(
+                    self.board[r][f].expect("Expected pawn in get_pawn_moves."),
+                    f,
+                    r,
+                    f,
+                    r_up,
+                    None,
+                    self.board[r_up][f],
+                ))
             }
         }
 
@@ -276,7 +300,15 @@ impl Position {
             let f_left = (f as i32 - 1) as usize;
             let capture_piece = self.board[r_up][f_left];
             match capture_piece {
-                Some(p) if p.color != color => moves.push(ChessMove::new(f, r, f_left, r_up, None)),
+                Some(p) if p.color != color => moves.push(ChessMove::new(
+                    self.board[r][f].expect("Expected pawn in get_pawn_moves."),
+                    f,
+                    r,
+                    f_left,
+                    r_up,
+                    None,
+                    self.board[r_up][f_left],
+                )),
                 _ => (),
             }
         }
@@ -285,9 +317,15 @@ impl Position {
         if f_right <= 7 {
             let capture_position = self.board[r_up][f_right];
             match capture_position {
-                Some(p) if p.color != color => {
-                    moves.push(ChessMove::new(f, r, f_right, r_up, None))
-                }
+                Some(p) if p.color != color => moves.push(ChessMove::new(
+                    self.board[r][f].expect("Expected pawn in get_pawn_moves."),
+                    f,
+                    r,
+                    f_right,
+                    r_up,
+                    None,
+                    self.board[r_up][f_right],
+                )),
                 _ => (),
             }
         }
@@ -296,10 +334,10 @@ impl Position {
 
     fn get_rook_moves(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
         let mut moves = Vec::<ChessMove>::with_capacity(20);
-        Self::add_look_result(&mut moves, color, f, r, self.look_right(f, r));
-        Self::add_look_result(&mut moves, color, f, r, self.look_left(f, r));
-        Self::add_look_result(&mut moves, color, f, r, self.look_up(f, r));
-        Self::add_look_result(&mut moves, color, f, r, self.look_down(f, r));
+        self.add_look_result(&mut moves, color, f, r, self.look_right(f, r));
+        self.add_look_result(&mut moves, color, f, r, self.look_left(f, r));
+        self.add_look_result(&mut moves, color, f, r, self.look_up(f, r));
+        self.add_look_result(&mut moves, color, f, r, self.look_down(f, r));
         moves
     }
 
@@ -308,7 +346,15 @@ impl Position {
         let squares = self.look_l(f, r);
         for s in squares {
             if self.can_move_to_square(s.file as isize, s.rank as isize, color) {
-                moves.push(ChessMove::new(f, r, s.file, s.rank, None));
+                moves.push(ChessMove::new(
+                    self.board[r][f].expect("Expected knight in get_pawn_moves."),
+                    f,
+                    r,
+                    s.file,
+                    s.rank,
+                    None,
+                    self.board[s.rank][s.file],
+                ));
             }
         }
         moves
@@ -317,10 +363,10 @@ impl Position {
     fn get_bishop_moves(&self, f: usize, r: usize, color: Color) -> Vec<ChessMove> {
         let mut moves = Vec::<ChessMove>::with_capacity(20);
 
-        Self::add_look_result(&mut moves, color, f, r, self.look_up_right(f, r));
-        Self::add_look_result(&mut moves, color, f, r, self.look_up_left(f, r));
-        Self::add_look_result(&mut moves, color, f, r, self.look_down_right(f, r));
-        Self::add_look_result(&mut moves, color, f, r, self.look_down_left(f, r));
+        self.add_look_result(&mut moves, color, f, r, self.look_up_right(f, r));
+        self.add_look_result(&mut moves, color, f, r, self.look_up_left(f, r));
+        self.add_look_result(&mut moves, color, f, r, self.look_down_right(f, r));
+        self.add_look_result(&mut moves, color, f, r, self.look_down_left(f, r));
         moves
     }
 
@@ -338,35 +384,99 @@ impl Position {
 
         // Right
         if self.can_move_to_square(fi + 1, ri, color) {
-            moves.push(ChessMove::new(f, r, f + 1, r, None));
+            moves.push(ChessMove::new(
+                self.board[r][f].expect("Expected king in get_pawn_moves."),
+                f,
+                r,
+                f + 1,
+                r,
+                None,
+                self.board[ri as usize][fi as usize + 1],
+            ));
         }
         // Down right
         if self.can_move_to_square(fi + 1, ri - 1, color) {
-            moves.push(ChessMove::new(f, r, f + 1, r - 1, None));
+            moves.push(ChessMove::new(
+                self.board[r][f].expect("Expected king in get_pawn_moves."),
+                f,
+                r,
+                f + 1,
+                r - 1,
+                None,
+                self.board[ri as usize - 1][fi as usize + 1],
+            ));
         }
         // Down
         if self.can_move_to_square(fi, ri - 1, color) {
-            moves.push(ChessMove::new(f, r, f, r - 1, None));
+            moves.push(ChessMove::new(
+                self.board[r][f].expect("Expected king in get_pawn_moves."),
+                f,
+                r,
+                f,
+                r - 1,
+                None,
+                self.board[ri as usize - 1][fi as usize],
+            ));
         }
         // Down left
         if self.can_move_to_square(fi - 1, ri - 1, color) {
-            moves.push(ChessMove::new(f, r, f - 1, r - 1, None));
+            moves.push(ChessMove::new(
+                self.board[r][f].expect("Expected king in get_pawn_moves."),
+                f,
+                r,
+                f - 1,
+                r - 1,
+                None,
+                self.board[ri as usize - 1][fi as usize - 1],
+            ));
         }
         // Left
         if self.can_move_to_square(fi - 1, ri, color) {
-            moves.push(ChessMove::new(f, r, f - 1, r, None));
+            moves.push(ChessMove::new(
+                self.board[r][f].expect("Expected king in get_pawn_moves."),
+                f,
+                r,
+                f - 1,
+                r,
+                None,
+                self.board[ri as usize][fi as usize - 1],
+            ));
         }
         // Up left
         if self.can_move_to_square(fi - 1, ri + 1, color) {
-            moves.push(ChessMove::new(f, r, f - 1, r + 1, None));
+            moves.push(ChessMove::new(
+                self.board[r][f].expect("Expected king in get_pawn_moves."),
+                f,
+                r,
+                f - 1,
+                r + 1,
+                None,
+                self.board[ri as usize + 1][fi as usize - 1],
+            ));
         }
         // Up
         if self.can_move_to_square(fi, ri + 1, color) {
-            moves.push(ChessMove::new(f, r, f, r + 1, None));
+            moves.push(ChessMove::new(
+                self.board[r][f].expect("Expected king in get_pawn_moves."),
+                f,
+                r,
+                f,
+                r + 1,
+                None,
+                self.board[ri as usize + 1][fi as usize],
+            ));
         }
         // Up right
         if self.can_move_to_square(fi + 1, ri + 1, color) {
-            moves.push(ChessMove::new(f, r, f + 1, r + 1, None));
+            moves.push(ChessMove::new(
+                self.board[r][f].expect("Expected king in get_pawn_moves."),
+                f,
+                r,
+                f + 1,
+                r + 1,
+                None,
+                self.board[ri as usize + 1][fi as usize + 1],
+            ));
         }
 
         // TODO Castle
@@ -596,6 +706,7 @@ impl Position {
     }
 
     fn add_look_result(
+        &self,
         moves: &mut Vec<ChessMove>,
         color: Color,
         f: usize,
@@ -607,7 +718,15 @@ impl Position {
             if i == squares.len() - 1 && piece.is_some() && piece.unwrap().color == color {
                 continue;
             }
-            moves.push(ChessMove::new(f, r, s.file, s.rank, None));
+            moves.push(ChessMove::new(
+                self.board[r][f].expect("add_look_result expects a piece at the source square."),
+                f,
+                r,
+                s.file,
+                s.rank,
+                None,
+                piece,
+            ));
         }
     }
 

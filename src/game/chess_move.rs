@@ -53,9 +53,9 @@ impl ChessMove {
         let rank2 = parse_rank(caps.get(4).ok_or(ParseMoveError::RankParseError)?.as_str())?;
 
         let promo_match = caps.get(5);
-        let promo_str = promo_match.map(|pm| pm.as_str());
-        let promo_piece = promo_str.map(|p| Piece::from_str(p));
-        let promo_option = promo_piece.map(|Ok(p)| p);
+        let promo_option = promo_match
+            .map(|pm| pm.as_str())
+            .and_then(|p| Piece::from_str(p).ok());
         let moved_piece = p.board[rank1][file1].ok_or(ParseMoveError::IllegalMoveError)?;
         let captured_piece = p.board[rank2][file2];
         return Ok(ChessMove::new(
